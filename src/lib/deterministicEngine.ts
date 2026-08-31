@@ -48,10 +48,10 @@ export function analyzeDeterministicRules(resumeText: string): DeterministicMetr
   // 2. Quantification Metric Regex Extractor
   const extractedMetrics: MetricOccurrence[] = [];
   const metricRegexes = [
-    { regex: /\b\d+(?:\.\d+)?%\b/g, type: 'Percentage' as const },
-    { regex: /\$\d+(?:\.\d+)?[kKmMbB]?\b/g, type: 'Currency' as const },
-    { regex: /\b\d+\s*(?:ms|seconds|sec|minutes|hrs|qps|dps)\b/gi, type: 'Latency' as const },
-    { regex: /\b\d+k?\s*(?:users|clients|requests|records|queries|teams|clusters|components|repos|stars|forks|files)\b/gi, type: 'UserScale' as const },
+    { regex: /\b\d+(?:\.\d+)?%/g, type: 'Percentage' as const },
+    { regex: /\$\d+(?:\.\d+)?[kKmMbB]?/g, type: 'Currency' as const },
+    { regex: /\b\d+(?:\.\d+)?\s*(?:ms|seconds|sec|minutes|hrs|qps|dps|s)\b/gi, type: 'Latency' as const },
+    { regex: /\b\d+k?\+?\s*(?:users|clients|requests|records|queries|teams|clusters|components|dashboards|repos|stars|forks|files)\b/gi, type: 'UserScale' as const },
     { regex: /\b\d+x\b/gi, type: 'GeneralNumber' as const }
   ];
 
@@ -71,7 +71,7 @@ export function analyzeDeterministicRules(resumeText: string): DeterministicMetr
   });
 
   // Calculate Quantification Score
-  const bulletLines = lines.filter(l => l.startsWith('•') || l.startsWith('-') || l.startsWith('*'));
+  const bulletLines = lines.filter(l => /^[•\-\*\s*➢➜▪►–—]/.test(l));
   const bulletCount = bulletLines.length || Math.max(1, lines.length / 4);
   const metricCount = extractedMetrics.length;
   const metricsPerBullet = metricCount / Math.max(1, bulletCount);
