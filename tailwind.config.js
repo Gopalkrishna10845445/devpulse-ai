@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwind-config').Config} */
 module.exports = {
   darkMode: "class",
   content: [
@@ -9,21 +9,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        background: "#000000",
         surface: "#131315",
-        "surface-glass": "rgba(255, 255, 255, 0.02)",
         "surface-dim": "#131315",
+        "surface-glass": "rgba(255, 255, 255, 0.02)",
         "surface-container-lowest": "#0e0e10",
         "surface-container-low": "#1c1b1d",
         "surface-container": "#201f22",
         "surface-container-high": "#2a2a2c",
         "surface-container-highest": "#353437",
+        "on-background": "#e5e1e4",
         "on-surface": "#e5e1e4",
         "on-surface-variant": "#c4c7c8",
         "border-subtle": "rgba(255, 255, 255, 0.08)",
         "semantic-emerald": "#10B981",
         "semantic-amber": "#F59E0B",
         "semantic-red": "#EF4444",
-        background: "#000000",
         primary: "#ffffff",
         "on-primary": "#2f3131",
       },
@@ -32,7 +33,28 @@ module.exports = {
         headline: ["Geist", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
+      fontSize: {
+        "display-lg": ["48px", { lineHeight: "1.1", letterSpacing: "-0.04em", fontWeight: "600" }],
+        "headline-lg": ["32px", { lineHeight: "1.2", letterSpacing: "-0.03em", fontWeight: "600" }],
+        "headline-lg-mobile": ["24px", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" }],
+        "title-md": ["18px", { lineHeight: "1.4", letterSpacing: "-0.01em", fontWeight: "500" }],
+        "body-md": ["14px", { lineHeight: "1.6", letterSpacing: "0em", fontWeight: "400" }],
+        "body-sm": ["13px", { lineHeight: "1.5", letterSpacing: "0em", fontWeight: "400" }],
+        "label-mono": ["12px", { lineHeight: "1", letterSpacing: "0.02em", fontWeight: "500" }],
+        "label-caps": ["11px", { lineHeight: "1", letterSpacing: "0.05em", fontWeight: "600" }],
+      },
+      spacing: {
+        "margin-desktop": "36px",
+        "margin-mobile": "16px",
+        xs: "4px",
+        sm: "8px",
+        md: "12px",
+        lg: "24px",
+        xl: "48px",
+        gutter: "12px",
+      },
     },
   },
   plugins: [],
 };
+

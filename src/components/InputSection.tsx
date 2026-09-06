@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { CANDIDATE_PRESETS } from '@/lib/mockData';
-import { Github, FileText, Sparkles, ArrowRight, UserCheck, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface InputSectionProps {
   onAnalyze: (resumeText: string, githubUsername: string, roleTitle: string) => void;
@@ -29,173 +28,125 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 mb-12">
-      <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-slate-800 shadow-2xl relative overflow-hidden">
+    <div className="w-full">
+      <div className="p-5 rounded-xl bg-[#131315] border border-white/10 space-y-4">
         
-        {/* Input Mode Selector Tabs */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-          <div className="flex items-center space-x-3">
+        {/* Mode Selector */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('preset')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'preset'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'text-[#8e9192] hover:text-white'
               }`}
             >
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>1-Click Recruiter Presets</span>
+              1-Click Candidate Presets
             </button>
 
             <button
               onClick={() => setActiveTab('custom')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'custom'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'text-[#8e9192] hover:text-white'
               }`}
             >
-              <FileText className="w-4 h-4 text-cyan-400" />
-              <span>Custom Resume & GitHub</span>
+              Custom Resume & GitHub
             </button>
           </div>
 
-          <span className="text-xs text-slate-500 hidden sm:block">Zero friction recruiter testing</span>
+          <span className="text-[11px] font-mono text-[#8e9192] hidden sm:block">Zero Friction Testing</span>
         </div>
 
-        {/* TAB 1: PRESET CANDIDATES */}
+        {/* TAB 1: PRESETS */}
         {activeTab === 'preset' && (
-          <div>
-            <p className="text-xs text-slate-400 mb-4">
-              Select a preset candidate profile to immediately test DevPulse AI multi-signal assessment engine:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {CANDIDATE_PRESETS.map((preset) => {
-                const isSelected = activePresetId === preset.id;
-                const isSenior = preset.experienceLevel === 'Senior';
-                return (
-                  <div
-                    key={preset.id}
-                    onClick={() => onSelectPreset(preset.id)}
-                    className={`cursor-pointer rounded-xl p-5 transition-all duration-200 border relative ${
-                      isSelected
-                        ? isSenior
-                          ? 'bg-slate-900/95 border-amber-400/90 shadow-lg shadow-amber-500/25 ring-1 ring-amber-400/60'
-                          : 'bg-slate-900/90 border-cyan-400/80 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/50'
-                        : isSenior
-                          ? 'glass-card-classic border-amber-500/30 hover:border-amber-400/60'
-                          : 'glass-card hover:border-slate-700'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div className={`absolute top-3 right-3 ${isSenior ? 'text-amber-400' : 'text-cyan-400'}`}>
-                        <CheckCircle2 className={`w-5 h-5 ${isSenior ? 'fill-amber-500/20 text-amber-400' : 'fill-cyan-500/20 text-cyan-400'}`} />
-                      </div>
-                    )}
-
-                    <div className="flex items-center space-x-3 mb-3">
-                      <img
-                        src={preset.avatar}
-                        alt={preset.name}
-                        className={`w-11 h-11 rounded-full object-cover border ${isSenior ? 'border-amber-400/60 ring-2 ring-amber-500/20' : 'border-slate-700'}`}
-                      />
-                      <div>
-                        <div className="flex items-center space-x-1.5">
-                          <h3 className="text-sm font-bold text-white">{preset.name}</h3>
-                          {isSenior && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                              Classic
-                            </span>
-                          )}
-                        </div>
-                        <p className={`text-xs font-medium ${isSenior ? 'text-amber-400' : 'text-cyan-400'}`}>{preset.roleTitle}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-300 line-clamp-2 mb-3 leading-relaxed">
-                      {preset.summary}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <Github className="w-3.5 h-3.5 text-slate-400" /> @{preset.githubUsername}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded font-mono ${
-                        isSenior
-                          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                          : 'bg-slate-800 text-slate-300'
-                      }`}>
-                        {preset.experienceLevel} Dev
-                      </span>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {CANDIDATE_PRESETS.map((preset) => {
+              const isSelected = activePresetId === preset.id;
+              return (
+                <div
+                  key={preset.id}
+                  onClick={() => onSelectPreset(preset.id)}
+                  className={`p-4 rounded-lg cursor-pointer transition-all border ${
+                    isSelected
+                      ? 'bg-[#1c1b1d] border-cyan-500/50 text-white shadow-sm'
+                      : 'bg-[#0e0e10] border-white/10 hover:border-white/20 text-[#c4c7c8]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-semibold text-xs text-white">{preset.name}</div>
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#131315] text-cyan-300 border border-white/10">
+                      {preset.experienceLevel}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+
+                  <p className="text-[11px] text-[#8e9192] line-clamp-2 mb-2 leading-relaxed">
+                    {preset.summary}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] font-mono text-[#8e9192]">
+                    <span>@{preset.githubUsername}</span>
+                    <span>{preset.roleTitle}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* TAB 2: CUSTOM RESUME & GITHUB */}
+        {/* TAB 2: CUSTOM FORM */}
         {activeTab === 'custom' && (
-          <form onSubmit={handleCustomSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleCustomSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Github className="w-4 h-4 text-purple-400" /> GitHub Profile URL or Username
+                <label className="block text-[11px] font-mono text-[#8e9192] uppercase mb-1">
+                  GitHub Profile URL or Username
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. torvalds or https://github.com/alexrivera-dev"
                   value={customGithubUsername}
                   onChange={(e) => setCustomGithubUsername(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0e0e10] border border-white/10 text-xs text-white focus:outline-none focus:border-white/40 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-cyan-400" /> Target Engineering Role Title
+                <label className="block text-[11px] font-mono text-[#8e9192] uppercase mb-1">
+                  Target Engineering Role Title
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Senior Frontend Architect / Distributed Systems Engineer"
+                  placeholder="e.g. Senior Full-Stack Engineer"
                   value={targetRoleTitle}
                   onChange={(e) => setTargetRoleTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0e0e10] border border-white/10 text-xs text-white focus:outline-none focus:border-white/40"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-amber-400" /> Plain Text or Markdown Resume Content
+              <label className="block text-[11px] font-mono text-[#8e9192] uppercase mb-1">
+                Resume Content (Plain Text or Markdown)
               </label>
               <textarea
-                rows={6}
-                placeholder="Paste full candidate resume text here (including contact info, experience bullets, technical skills)..."
+                rows={5}
+                placeholder="Paste full candidate resume text here..."
                 value={customResumeText}
                 onChange={(e) => setCustomResumeText(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs font-mono focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 leading-relaxed"
+                className="w-full px-3 py-2.5 rounded-lg bg-[#0e0e10] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-white/40 leading-relaxed"
               />
             </div>
 
             <button
               type="submit"
               disabled={isEvaluating || customResumeText.trim().length < 40}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="w-full py-2.5 rounded-lg bg-white text-black font-bold text-xs hover:bg-white/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isEvaluating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Evaluating Candidate Signals...</span>
-                </>
-              ) : (
-                <>
-                  <span>Run Custom Portfolio & ATS Evaluation</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+              <span>Run Live Engineering Evaluation</span>
             </button>
           </form>
         )}

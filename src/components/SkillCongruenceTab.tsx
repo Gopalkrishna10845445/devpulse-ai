@@ -26,21 +26,21 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
   return (
     <div className="w-full flex flex-col stagger-fade-up space-y-4">
       
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2">
+      {/* Title & Filter Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-1">
         <div>
-          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Skills Congruence</h2>
-          <p className="text-xs text-on-surface-variant">Audit Trail for {candidateName}</p>
+          <h2 className="font-headline font-semibold text-lg sm:text-xl text-primary tracking-tight">Skills Congruence</h2>
+          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Audit Trail for {candidateName}</p>
         </div>
 
         {/* Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setFilter('ALL')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
               filter === 'ALL'
                 ? 'bg-white/10 text-primary border border-white/20'
-                : 'text-on-surface-variant hover:text-on-surface'
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
             All ({skillMatrix.length})
@@ -48,10 +48,10 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
           
           <button
             onClick={() => setFilter('VERIFIED')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
               filter === 'VERIFIED'
-                ? 'bg-semantic-emerald/20 text-emerald-400 border border-semantic-emerald/40'
-                : 'text-on-surface-variant hover:text-on-surface'
+                ? 'bg-semantic-emerald/20 text-semantic-emerald border border-semantic-emerald/40'
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
             Verified ({verifiedCount})
@@ -59,10 +59,10 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
 
           <button
             onClick={() => setFilter('PARTIAL')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
               filter === 'PARTIAL'
-                ? 'bg-semantic-amber/20 text-amber-400 border border-semantic-amber/40'
-                : 'text-on-surface-variant hover:text-on-surface'
+                ? 'bg-semantic-amber/20 text-semantic-amber border border-semantic-amber/40'
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
             Partial ({partialCount})
@@ -70,10 +70,10 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
 
           <button
             onClick={() => setFilter('RESUME_ONLY')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
               filter === 'RESUME_ONLY'
-                ? 'bg-semantic-red/20 text-red-400 border border-semantic-red/40'
-                : 'text-on-surface-variant hover:text-on-surface'
+                ? 'bg-semantic-red/20 text-semantic-red border border-semantic-red/40'
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
             Missing ({missingCount})
@@ -83,20 +83,20 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
 
       {/* Skills Congruence Audit Table Container */}
       <div className="w-full overflow-x-auto no-scrollbar rounded-xl border border-border-subtle bg-surface">
-        <div className="min-w-[640px] w-full">
+        <div className="min-w-[600px] w-full">
           
           {/* Table Header */}
           <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-border-subtle bg-surface-container-lowest sticky top-0 z-10">
-            <div className="col-span-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+            <div className="col-span-3 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
               Skill
             </div>
-            <div className="col-span-4 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+            <div className="col-span-4 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
               Resume Claim
             </div>
-            <div className="col-span-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+            <div className="col-span-3 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
               GitHub Evidence
             </div>
-            <div className="col-span-2 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider text-right">
+            <div className="col-span-2 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">
               Status
             </div>
           </div>
@@ -104,7 +104,7 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
           {/* Table Body */}
           <div className="flex flex-col divide-y divide-border-subtle">
             {filtered.length === 0 ? (
-              <div className="p-8 text-center text-xs text-on-surface-variant">
+              <div className="p-8 text-center font-body-sm text-xs text-on-surface-variant">
                 No skill items found matching the selected filter.
               </div>
             ) : (
@@ -127,35 +127,32 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
                 return (
                   <div
                     key={idx}
-                    className="grid grid-cols-12 gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors group cursor-default items-center"
+                    className="grid grid-cols-12 gap-3 px-4 py-3 hover:bg-white/5 transition-colors group cursor-default items-center"
                   >
                     {/* Col 1: Skill */}
                     <div className="col-span-3 flex items-center gap-2">
-                      <span className="font-mono text-xs font-semibold text-on-surface group-hover:text-primary transition-colors">
+                      <span className="font-label-mono text-label-mono text-on-surface group-hover:text-primary transition-colors">
                         {item.skill}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant px-1.5 py-0.5 rounded bg-surface-container-high border border-border-subtle">
-                        {item.category}
                       </span>
                     </div>
 
                     {/* Col 2: Resume Claim */}
                     <div className="col-span-4 flex items-center">
-                      <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors truncate">
+                      <span className="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors truncate">
                         {claimQuote}
                       </span>
                     </div>
 
                     {/* Col 3: GitHub Evidence */}
                     <div className="col-span-3 flex items-center">
-                      <span className="text-xs text-on-surface-variant truncate">
+                      <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
                         {githubProof}
                       </span>
                     </div>
 
                     {/* Col 4: Status Badge */}
                     <div className="col-span-2 flex items-center justify-end">
-                      <div className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider ${badgeClass}`}>
+                      <div className={`px-2 py-1 rounded font-label-caps text-[10px] uppercase tracking-wider ${badgeClass}`}>
                         {statusLabel}
                       </div>
                     </div>
@@ -171,3 +168,4 @@ export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
     </div>
   );
 };
+
