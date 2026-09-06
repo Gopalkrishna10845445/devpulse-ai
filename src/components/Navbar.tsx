@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { Cpu, Github, Sparkles, RefreshCw, FileDown, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
 import { CANDIDATE_PRESETS } from '@/lib/mockData';
 
 interface NavbarProps {
+  activeTab: 'overview' | 'github' | 'skills' | 'rewriter' | 'ats' | 'questions';
+  onSelectTab: (tab: 'overview' | 'github' | 'skills' | 'rewriter' | 'ats' | 'questions') => void;
   activePresetId?: string;
   onSelectPreset: (presetId: string) => void;
   onReset: () => void;
@@ -13,85 +14,234 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  onSelectTab,
   activePresetId,
   onSelectPreset,
   onReset,
   onExport,
   isEvaluating = false,
 }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
-    <header className="sticky top-0 z-50 w-full glass-panel border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
-        {/* Brand Logo */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={onReset}>
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5 shadow-lg shadow-cyan-500/20">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-cyan-400 animate-pulse" />
+    <>
+      <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl pt-safe">
+        {/* Upper Header Row */}
+        <div className="h-16 flex items-center justify-between px-4 sm:px-8 border-b border-border-subtle">
+          
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={onReset}>
+            <div className="w-6 h-6 bg-primary rounded-sm flex items-center justify-center font-bold text-on-primary text-xs">
+              D
             </div>
+            <span className="font-headline text-lg font-semibold tracking-tighter text-on-surface">DevPulse</span>
+            <span className="ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-surface-container-high border border-border-subtle text-on-surface-variant">
+              v2.0 AI
+            </span>
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-tight text-white">DevPulse</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                AI v2.0
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block">GitHub Portfolio & Deep ATS Evaluator</p>
+
+          {/* Action Icons: Search & Profile Switcher */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high border border-border-subtle flex items-center justify-center transition-colors text-on-surface-variant hover:text-on-surface"
+              title="Search Candidate / Look Up GitHub Profile"
+            >
+              <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
+
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+              title="Switch Candidate Presets"
+            >
+              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            </button>
+
+            <button
+              onClick={onExport}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high border border-border-subtle text-xs font-medium text-on-surface hover:border-white/20 transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px] text-semantic-emerald">download</span>
+              <span>Export</span>
+            </button>
           </div>
         </div>
 
-        {/* Candidate Presets Quick Switcher */}
-        <div className="hidden md:flex items-center space-x-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-          <span className="text-xs font-medium text-slate-400 px-2 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Presets:
-          </span>
-          {CANDIDATE_PRESETS.map(preset => {
-            const isActive = activePresetId === preset.id;
-            return (
+        {/* Top Horizontal Scrollable Tab Navigation */}
+        <div className="flex items-center gap-2 px-4 sm:px-8 h-12 overflow-x-auto no-scrollbar border-b border-border-subtle bg-background/60">
+          <button
+            onClick={() => onSelectTab('overview')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Overview
+          </button>
+
+          <button
+            onClick={() => onSelectTab('skills')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'skills'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Skills Congruence
+          </button>
+
+          <button
+            onClick={() => onSelectTab('github')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'github'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            GitHub Portfolio
+          </button>
+
+          <button
+            onClick={() => onSelectTab('rewriter')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'rewriter'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            AI Rewrite
+          </button>
+
+          <button
+            onClick={() => onSelectTab('ats')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'ats'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            ATS Breakdown
+          </button>
+
+          <button
+            onClick={() => onSelectTab('questions')}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-colors ${
+              activeTab === 'questions'
+                ? 'bg-white/10 text-primary font-semibold border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Interview Q&A
+          </button>
+        </div>
+      </header>
+
+      {/* Preset Switcher Profile Modal */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-md bg-surface-container rounded-2xl border border-border-subtle p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="font-headline font-semibold text-lg text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-semantic-amber">person_search</span>
+                <span>Select Candidate Preset</span>
+              </h3>
               <button
-                key={preset.id}
-                onClick={() => onSelectPreset(preset.id)}
-                disabled={isEvaluating}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1.5 ${
-                  isActive
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                onClick={() => setIsProfileOpen(false)}
+                className="text-on-surface-variant hover:text-on-surface text-sm"
               >
-                <span>{preset.name.split(' ')[0]}</span>
-                <span className="text-[10px] opacity-60">({preset.experienceLevel})</span>
+                ✕
               </button>
-            );
-          })}
-        </div>
+            </div>
 
-        {/* Right Actions & Status */}
-        <div className="flex items-center space-x-3">
-          <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>GitHub API Active</span>
+            <div className="space-y-2">
+              {CANDIDATE_PRESETS.map((preset) => {
+                const isActive = activePresetId === preset.id;
+                return (
+                  <div
+                    key={preset.id}
+                    onClick={() => {
+                      onSelectPreset(preset.id);
+                      setIsProfileOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                      isActive
+                        ? 'bg-white/10 border-primary text-primary'
+                        : 'bg-surface-container-low border-border-subtle hover:bg-surface-container-high text-on-surface-variant'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-sm text-on-surface">{preset.name}</div>
+                      <div className="text-xs text-on-surface-variant">{preset.roleTitle} • GitHub: @{preset.githubUsername}</div>
+                    </div>
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface border border-border-subtle">
+                      {preset.experienceLevel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsProfileOpen(false)}
+              className="w-full py-2.5 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold hover:bg-white/10 transition-colors"
+            >
+              Close
+            </button>
           </div>
-
-          <button
-            onClick={onExport}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-medium transition-all flex items-center space-x-1.5 border border-slate-700"
-          >
-            <FileDown className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Export Report</span>
-          </button>
-
-          <button
-            onClick={onReset}
-            disabled={isEvaluating}
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-semibold shadow-md shadow-cyan-500/20 transition-all flex items-center space-x-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isEvaluating ? 'animate-spin' : ''}`} />
-            <span>New Scan</span>
-          </button>
         </div>
+      )}
 
-      </div>
-    </header>
+      {/* Search Modal */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-surface-container rounded-2xl border border-border-subtle p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="font-headline font-semibold text-lg text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined">search</span>
+                <span>GitHub & Candidate Lookup</span>
+              </h3>
+              <button onClick={() => setIsSearchOpen(false)} className="text-on-surface-variant hover:text-on-surface">✕</button>
+            </div>
+
+            <p className="text-xs text-on-surface-variant">
+              Quickly jump to any candidate profile preset or inspect live GitHub handles:
+            </p>
+
+            <div className="grid grid-cols-1 gap-2">
+              {CANDIDATE_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    onSelectPreset(p.id);
+                    setIsSearchOpen(false);
+                  }}
+                  className="flex items-center justify-between p-3 rounded-xl bg-surface-container-lowest border border-border-subtle hover:border-white/20 text-left transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-on-surface-variant">account_circle</span>
+                    <div>
+                      <div className="text-xs font-semibold text-on-surface">{p.name}</div>
+                      <div className="text-[11px] text-on-surface-variant">{p.roleTitle}</div>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-xs text-on-surface-variant">arrow_forward</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setIsSearchOpen(false)}
+              className="w-full py-2.5 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold hover:bg-white/10"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

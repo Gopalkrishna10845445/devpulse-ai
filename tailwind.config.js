@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -8,38 +9,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        brand: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          900: '#134e4a',
-        },
-        cyber: {
-          blue: '#00f0ff',
-          purple: '#7000ff',
-          pink: '#ff007f',
-          dark: '#0a0d14',
-          card: '#121824',
-          border: '#1e293b',
-        }
+        surface: "#131315",
+        "surface-glass": "rgba(255, 255, 255, 0.02)",
+        "surface-dim": "#131315",
+        "surface-container-lowest": "#0e0e10",
+        "surface-container-low": "#1c1b1d",
+        "surface-container": "#201f22",
+        "surface-container-high": "#2a2a2c",
+        "surface-container-highest": "#353437",
+        "on-surface": "#e5e1e4",
+        "on-surface-variant": "#c4c7c8",
+        "border-subtle": "rgba(255, 255, 255, 0.08)",
+        "semantic-emerald": "#10B981",
+        "semantic-amber": "#F59E0B",
+        "semantic-red": "#EF4444",
+        background: "#000000",
+        primary: "#ffffff",
+        "on-primary": "#2f3131",
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ["Inter", "sans-serif"],
+        headline: ["Geist", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
       },
-      animation: {
-        'pulse-glow': 'pulseGlow 3s infinite ease-in-out',
-      },
-      keyframes: {
-        pulseGlow: {
-          '0%, 100%': { opacity: '0.6', filter: 'drop-shadow(0 0 15px rgba(0, 240, 255, 0.4))' },
-          '50%': { opacity: '1', filter: 'drop-shadow(0 0 25px rgba(112, 0, 255, 0.8))' },
-        }
-      }
     },
   },
   plugins: [],

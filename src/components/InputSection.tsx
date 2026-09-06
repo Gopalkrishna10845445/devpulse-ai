@@ -73,19 +73,24 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {CANDIDATE_PRESETS.map((preset) => {
                 const isSelected = activePresetId === preset.id;
+                const isSenior = preset.experienceLevel === 'Senior';
                 return (
                   <div
                     key={preset.id}
                     onClick={() => onSelectPreset(preset.id)}
                     className={`cursor-pointer rounded-xl p-5 transition-all duration-200 border relative ${
                       isSelected
-                        ? 'bg-slate-900/90 border-cyan-400/80 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/50'
-                        : 'glass-card hover:border-slate-700'
+                        ? isSenior
+                          ? 'bg-slate-900/95 border-amber-400/90 shadow-lg shadow-amber-500/25 ring-1 ring-amber-400/60'
+                          : 'bg-slate-900/90 border-cyan-400/80 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400/50'
+                        : isSenior
+                          ? 'glass-card-classic border-amber-500/30 hover:border-amber-400/60'
+                          : 'glass-card hover:border-slate-700'
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute top-3 right-3 text-cyan-400">
-                        <CheckCircle2 className="w-5 h-5 fill-cyan-500/20 text-cyan-400" />
+                      <div className={`absolute top-3 right-3 ${isSenior ? 'text-amber-400' : 'text-cyan-400'}`}>
+                        <CheckCircle2 className={`w-5 h-5 ${isSenior ? 'fill-amber-500/20 text-amber-400' : 'fill-cyan-500/20 text-cyan-400'}`} />
                       </div>
                     )}
 
@@ -93,11 +98,18 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <img
                         src={preset.avatar}
                         alt={preset.name}
-                        className="w-11 h-11 rounded-full object-cover border border-slate-700"
+                        className={`w-11 h-11 rounded-full object-cover border ${isSenior ? 'border-amber-400/60 ring-2 ring-amber-500/20' : 'border-slate-700'}`}
                       />
                       <div>
-                        <h3 className="text-sm font-bold text-white">{preset.name}</h3>
-                        <p className="text-xs text-cyan-400 font-medium">{preset.roleTitle}</p>
+                        <div className="flex items-center space-x-1.5">
+                          <h3 className="text-sm font-bold text-white">{preset.name}</h3>
+                          {isSenior && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                              Classic
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs font-medium ${isSenior ? 'text-amber-400' : 'text-cyan-400'}`}>{preset.roleTitle}</p>
                       </div>
                     </div>
 
@@ -109,8 +121,12 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       <span className="text-slate-400 flex items-center gap-1">
                         <Github className="w-3.5 h-3.5 text-slate-400" /> @{preset.githubUsername}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                        {preset.experienceLevel}
+                      <span className={`px-2 py-0.5 rounded font-mono ${
+                        isSenior
+                          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                          : 'bg-slate-800 text-slate-300'
+                      }`}>
+                        {preset.experienceLevel} Dev
                       </span>
                     </div>
                   </div>

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { GitHubTelemetry } from '@/lib/types';
-import { Github, Star, GitFork, GitCommit, CheckCircle2, XCircle, ExternalLink, Code, ShieldCheck, Flame } from 'lucide-react';
 
 interface GitHubAuditTabProps {
   github: GitHubTelemetry;
@@ -10,94 +9,102 @@ interface GitHubAuditTabProps {
 
 export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
   return (
-    <div className="space-y-6">
+    <div className="w-full flex flex-col space-y-4 stagger-fade-up">
       
-      {/* Profile Header */}
-      <div className="glass-card p-6 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Title */}
+      <div className="pt-2 pb-2">
+        <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">GitHub Portfolio Audit</h2>
+        <p className="text-xs text-on-surface-variant">Public Code Repositories, Commit Velocity & Hygiene</p>
+      </div>
+
+      {/* Profile Header Card */}
+      <div className="p-5 rounded-xl bg-surface border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-4">
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <img
             src={github.avatarUrl}
             alt={github.name}
-            className="w-16 h-16 rounded-full border-2 border-purple-500/40 shadow-lg"
+            className="w-14 h-14 rounded-full border border-border-subtle shadow-md"
           />
           <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-base font-bold text-white">{github.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-headline font-semibold text-base text-on-surface">{github.name}</h3>
               <a
                 href={`https://github.com/${github.username}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                className="text-xs text-on-surface-variant hover:text-primary flex items-center gap-1"
               >
-                @{github.username} <ExternalLink className="w-3 h-3" />
+                @{github.username}
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
               </a>
             </div>
-            <p className="text-xs text-slate-300 max-w-lg mt-0.5">{github.bio}</p>
+            <p className="text-xs text-on-surface-variant max-w-lg mt-0.5">{github.bio}</p>
           </div>
         </div>
 
-        {/* Velocity Stats */}
-        <div className="flex items-center space-x-4 border-t sm:border-t-0 sm:border-l border-slate-800 pt-4 sm:pt-0 sm:pl-6 text-xs">
+        {/* Stats Summary */}
+        <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-border-subtle pt-3 sm:pt-0 sm:pl-5 text-xs">
           <div className="text-center">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold block">Commit Streak</span>
-            <span className="font-extrabold text-amber-400 text-sm flex items-center justify-center gap-1">
-              <Flame className="w-3.5 h-3.5 fill-amber-400" /> {github.activeCommitStreakDays} Days
+            <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Commit Streak</span>
+            <span className="font-headline font-bold text-semantic-amber text-sm flex items-center justify-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">local_fire_department</span>
+              {github.activeCommitStreakDays} Days
             </span>
           </div>
 
           <div className="text-center">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold block">Velocity</span>
-            <span className="font-extrabold text-cyan-400 text-sm">{github.recentCommitVelocity}/mo</span>
+            <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Velocity</span>
+            <span className="font-headline font-bold text-on-surface text-sm">{github.recentCommitVelocity}/mo</span>
           </div>
 
           <div className="text-center">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold block">Hygiene Score</span>
-            <span className="font-extrabold text-emerald-400 text-sm">{github.overallHygieneScore}/100</span>
+            <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Hygiene</span>
+            <span className="font-headline font-bold text-semantic-emerald text-sm">{github.overallHygieneScore}/100</span>
           </div>
         </div>
 
       </div>
 
-      {/* Language Distribution Share */}
-      <div className="glass-card p-6 rounded-xl border border-slate-800">
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Code className="w-4 h-4 text-cyan-400" /> Repository Language Distribution
+      {/* Language Distribution */}
+      <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px] text-primary">code</span>
+          <span>Repository Language Share</span>
         </h4>
 
-        {/* Stacked Progress Bar */}
-        <div className="w-full h-3 rounded-full bg-slate-900 overflow-hidden flex mb-4 border border-slate-800">
+        <div className="w-full h-2.5 rounded-full bg-surface-container-lowest overflow-hidden flex border border-border-subtle">
           {github.languages.map((lang, idx) => (
             <div
               key={idx}
               style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }}
-              className="h-full transition-all duration-300"
+              className="h-full transition-all"
               title={`${lang.name}: ${lang.percentage}%`}
             />
           ))}
         </div>
 
-        {/* Legend */}
         <div className="flex flex-wrap gap-4 text-xs">
           {github.languages.map((lang, idx) => (
-            <div key={idx} className="flex items-center space-x-1.5">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: lang.color }} />
-              <span className="text-slate-200 font-medium">{lang.name}</span>
-              <span className="text-slate-400 text-[11px]">({lang.percentage}%)</span>
+            <div key={idx} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lang.color }} />
+              <span className="text-on-surface font-medium">{lang.name}</span>
+              <span className="text-on-surface-variant text-[11px]">({lang.percentage}%)</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Top Repositories Grid */}
-      <div>
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Github className="w-4 h-4 text-purple-400" /> Inspected Public Repositories ({github.topRepositories.length})
+      {/* Inspected Public Repositories Grid */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px] text-primary">folder_open</span>
+          <span>Inspected Public Repositories ({github.topRepositories.length})</span>
         </h4>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {github.topRepositories.map((repo, idx) => (
-            <div key={idx} className="glass-card p-5 rounded-xl border border-slate-800 space-y-3">
+            <div key={idx} className="p-4 rounded-xl bg-surface border border-border-subtle space-y-3">
               
               <div className="flex items-start justify-between">
                 <div>
@@ -105,37 +112,40 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
                     href={repo.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm font-bold text-white hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                    className="text-xs font-semibold text-on-surface hover:text-primary transition-colors flex items-center gap-1"
                   >
-                    {repo.name} <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    {repo.name}
+                    <span className="material-symbols-outlined text-[12px] text-on-surface-variant">open_in_new</span>
                   </a>
-                  <p className="text-xs text-slate-300 mt-1 line-clamp-2">{repo.description}</p>
+                  <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{repo.description}</p>
                 </div>
-                <span className="px-2.5 py-1 rounded bg-slate-900 text-cyan-300 text-xs font-mono font-bold border border-slate-800">
+
+                <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-[10px] font-mono border border-border-subtle">
                   {repo.codeQualityScore}/100
                 </span>
               </div>
 
-              {/* Repo Stats & Badges */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs text-on-surface-variant">
+                <div className="flex items-center gap-3 text-[11px]">
                   <span className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" /> {repo.stars}
+                    <span className="material-symbols-outlined text-[14px] text-semantic-amber">star</span>
+                    {repo.stars}
                   </span>
                   <span className="flex items-center gap-1">
-                    <GitFork className="w-3.5 h-3.5 text-slate-400" /> {repo.forks}
+                    <span className="material-symbols-outlined text-[14px]">call_split</span>
+                    {repo.forks}
                   </span>
-                  <span className="font-mono text-purple-300">{repo.language}</span>
+                  <span className="font-mono text-on-surface">{repo.language}</span>
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-[10px]">
-                  <span className={`px-1.5 py-0.5 rounded ${repo.hasCiWorkflow ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                <div className="flex items-center gap-1 text-[10px]">
+                  <span className={`px-1.5 py-0.5 rounded ${repo.hasCiWorkflow ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
                     CI/CD
                   </span>
-                  <span className={`px-1.5 py-0.5 rounded ${repo.hasTests ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                  <span className={`px-1.5 py-0.5 rounded ${repo.hasTests ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
                     Tests
                   </span>
-                  <span className={`px-1.5 py-0.5 rounded ${repo.hasReadme ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                  <span className={`px-1.5 py-0.5 rounded ${repo.hasReadme ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
                     Docs
                   </span>
                 </div>
@@ -144,7 +154,6 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
             </div>
           ))}
         </div>
-
       </div>
 
     </div>

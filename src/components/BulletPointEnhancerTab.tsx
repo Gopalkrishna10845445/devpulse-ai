@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { BulletRewrite } from '@/lib/types';
-import { Zap, Copy, Check, Sparkles, TrendingUp, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface BulletPointEnhancerTabProps {
   bulletRewrites: BulletRewrite[];
@@ -47,145 +46,134 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
   const allRewrites = [...customRewrites, ...bulletRewrites];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full flex flex-col space-y-4 stagger-fade-up">
       
-      {/* Perspective Switcher & Header */}
-      <div className="glass-card p-6 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2">
         <div>
-          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-400" /> Interactive AI Bullet Point Optimizer & Score Booster
-          </h4>
-          <p className="text-[11px] text-slate-400">Replaces weak, passive resume bullets with quantified, high-impact engineering accomplishments</p>
+          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">AI Bullet Point Optimizer</h2>
+          <p className="text-xs text-on-surface-variant">Transform Passive Bullets into High-Impact Engineering Metrics</p>
         </div>
 
-        {/* 3 Strategic Perspectives */}
-        <div className="flex items-center space-x-2 text-xs bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+        {/* Focus Selector */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setSelectedFocus('metric')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-              selectedFocus === 'metric' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedFocus === 'metric' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            Metric Focus 📊
+            Metric Focus
           </button>
           
           <button
             onClick={() => setSelectedFocus('star')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-              selectedFocus === 'star' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedFocus === 'star' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            STAR Architectural 🚀
+            STAR Architectural
           </button>
 
           <button
             onClick={() => setSelectedFocus('executive')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-              selectedFocus === 'executive' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedFocus === 'executive' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            Executive Leadership 💼
+            Executive Focus
           </button>
         </div>
       </div>
 
-      {/* Custom Bullet Rewriter Form */}
-      <div className="glass-card p-5 rounded-xl border border-cyan-500/30 bg-cyan-950/10">
-        <form onSubmit={handleCustomRewriteSubmit} className="flex flex-col sm:flex-row gap-3 items-center">
+      {/* Live Custom Input Box */}
+      <div className="p-4 rounded-xl bg-surface border border-border-subtle">
+        <form onSubmit={handleCustomRewriteSubmit} className="flex flex-col sm:flex-row gap-2 items-center">
           <input
             type="text"
-            placeholder="Paste any weak resume bullet point to optimize live (e.g. Worked on optimizing database queries)..."
+            placeholder="Paste any weak resume bullet point to rewrite live (e.g. Worked on performance)..."
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
-            className="flex-1 w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+            className="flex-1 w-full px-4 py-2 rounded-lg bg-surface-container-lowest border border-border-subtle text-xs text-on-surface focus:outline-none focus:border-white/40"
           />
           <button
             type="submit"
             disabled={isRewritingCustom || customInput.trim().length < 10}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold text-xs transition-colors hover:bg-white/90 disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Generate 3 Rewrites</span>
+            <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
+            <span>Generate Rewrites</span>
           </button>
         </form>
       </div>
 
-      {/* Bullet Rewrites List */}
-      <div className="space-y-4">
+      {/* Rewrites Cards List */}
+      <div className="space-y-3">
         {allRewrites.map((rewrite, idx) => {
           let chosenRewrite = rewrite.metricFocusText;
           let focusTitle = 'Metric-Driven Focus';
-          let focusBadgeStyle = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
 
           if (selectedFocus === 'star') {
             chosenRewrite = rewrite.starArchitecturalText;
             focusTitle = 'STAR Architectural Focus';
-            focusBadgeStyle = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
           } else if (selectedFocus === 'executive') {
             chosenRewrite = rewrite.executiveFocusText;
-            focusTitle = 'Executive Leadership Focus';
-            focusBadgeStyle = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+            focusTitle = 'Executive Focus';
           }
 
           return (
-            <div key={rewrite.id || idx} className="glass-card p-6 rounded-xl border border-slate-800 space-y-4">
+            <div key={rewrite.id || idx} className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
               
-              {/* Header with Delta Score */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold text-slate-300">Bullet #{idx + 1} Optimization</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${focusBadgeStyle}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-on-surface">Bullet #{idx + 1}</span>
+                  <span className="px-2 py-0.5 rounded bg-surface-container-high text-[10px] text-on-surface-variant font-mono border border-border-subtle">
                     {focusTitle}
                   </span>
                 </div>
 
-                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5" /> +{rewrite.improvementDelta} ATS Impact
+                <span className="px-2.5 py-0.5 rounded-full bg-semantic-emerald/20 text-emerald-400 text-xs font-mono font-semibold border border-semantic-emerald/40 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                  +{rewrite.improvementDelta} Impact
                 </span>
               </div>
 
               {/* Detected Flaws */}
               {rewrite.detectedFlaws && rewrite.detectedFlaws.length > 0 && (
-                <div className="flex flex-wrap gap-2 text-[10px]">
+                <div className="flex flex-wrap gap-1.5 text-[10px]">
                   {rewrite.detectedFlaws.map((flaw, fIdx) => (
-                    <span key={fIdx} className="px-2 py-0.5 rounded bg-rose-950/30 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 text-rose-400" /> {flaw}
+                    <span key={fIdx} className="px-2 py-0.5 rounded bg-semantic-red/10 text-red-400 border border-semantic-red/30 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">warning</span>
+                      {flaw}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Diff Comparison: BEFORE vs AFTER */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              {/* Before vs After Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 
-                {/* BEFORE */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-rose-500/20 space-y-2">
-                  <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-wider block">Before (Weak / Passive)</span>
-                  <p className="text-slate-300 leading-relaxed font-mono text-[11px]">{rewrite.originalText}</p>
+                {/* Before */}
+                <div className="p-3.5 rounded-lg bg-surface-container-lowest border border-border-subtle space-y-1">
+                  <span className="text-[10px] font-semibold text-semantic-red uppercase tracking-wider block">Before (Weak / Passive)</span>
+                  <p className="text-on-surface-variant font-mono text-[11px] leading-relaxed">{rewrite.originalText}</p>
                 </div>
 
-                {/* AFTER */}
-                <div className="p-4 rounded-xl bg-slate-900 border border-emerald-500/30 space-y-2 relative group">
+                {/* After */}
+                <div className="p-3.5 rounded-lg bg-surface-container-high border border-border-subtle space-y-1.5 relative">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">After (AI Enhanced)</span>
+                    <span className="text-[10px] font-semibold text-semantic-emerald uppercase tracking-wider block">After (AI Enhanced)</span>
                     <button
                       onClick={() => handleCopy(chosenRewrite, rewrite.id)}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold transition-all flex items-center gap-1 border border-slate-700"
+                      className="px-2 py-0.5 rounded bg-surface border border-border-subtle text-on-surface text-[10px] font-medium transition-colors hover:border-white/30 flex items-center gap-1"
                     >
-                      {copiedId === rewrite.id ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3 text-cyan-400" />
-                          <span>Copy</span>
-                        </>
-                      )}
+                      <span className="material-symbols-outlined text-[12px]">
+                        {copiedId === rewrite.id ? 'check' : 'content_copy'}
+                      </span>
+                      <span>{copiedId === rewrite.id ? 'Copied' : 'Copy'}</span>
                     </button>
                   </div>
-                  <p className="text-white leading-relaxed font-mono text-[11px]">{chosenRewrite}</p>
+                  <p className="text-on-surface font-mono text-[11px] leading-relaxed">{chosenRewrite}</p>
                 </div>
 
               </div>

@@ -2,138 +2,169 @@
 
 import React, { useState } from 'react';
 import { SkillCongruenceItem } from '@/lib/types';
-import { CheckCircle2, AlertCircle, HelpCircle, Filter, GitCommit, Code } from 'lucide-react';
 
 interface SkillCongruenceTabProps {
   skillMatrix: SkillCongruenceItem[];
+  candidateName?: string;
 }
 
-export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({ skillMatrix }) => {
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'VERIFIED' | 'PARTIAL' | 'RESUME_ONLY'>('ALL');
+export const SkillCongruenceTab: React.FC<SkillCongruenceTabProps> = ({
+  skillMatrix,
+  candidateName = 'Alex Rivera',
+}) => {
+  const [filter, setFilter] = useState<'ALL' | 'VERIFIED' | 'PARTIAL' | 'RESUME_ONLY'>('ALL');
 
-  const filtered = skillMatrix.filter(item => {
-    if (statusFilter === 'ALL') return true;
-    return item.status === statusFilter;
+  const filtered = skillMatrix.filter((item) => {
+    if (filter === 'ALL') return true;
+    return item.status === filter;
   });
 
-  const verifiedCount = skillMatrix.filter(s => s.status === 'VERIFIED').length;
-  const partialCount = skillMatrix.filter(s => s.status === 'PARTIAL').length;
-  const resumeOnlyCount = skillMatrix.filter(s => s.status === 'RESUME_ONLY').length;
+  const verifiedCount = skillMatrix.filter((s) => s.status === 'VERIFIED').length;
+  const partialCount = skillMatrix.filter((s) => s.status === 'PARTIAL').length;
+  const missingCount = skillMatrix.filter((s) => s.status === 'RESUME_ONLY').length;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full flex flex-col stagger-fade-up space-y-4">
       
-      {/* Top Filter & Count Summary */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-4 rounded-xl border border-slate-800">
+      {/* Title Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2">
         <div>
-          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Resume Skill Claims vs. GitHub Code Proof Matrix
-          </h4>
-          <p className="text-[11px] text-slate-400">Deterministic cross-check of resume keywords against GitHub repositories & package manifests</p>
+          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Skills Congruence</h2>
+          <p className="text-xs text-on-surface-variant">Audit Trail for {candidateName}</p>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs">
+        {/* Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-              statusFilter === 'ALL' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+            onClick={() => setFilter('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+              filter === 'ALL'
+                ? 'bg-white/10 text-primary border border-white/20'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             All ({skillMatrix.length})
           </button>
           
           <button
-            onClick={() => setStatusFilter('VERIFIED')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center space-x-1 ${
-              statusFilter === 'VERIFIED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+            onClick={() => setFilter('VERIFIED')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+              filter === 'VERIFIED'
+                ? 'bg-semantic-emerald/20 text-emerald-400 border border-semantic-emerald/40'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span>Verified 🟢</span>
-            <span>({verifiedCount})</span>
+            Verified ({verifiedCount})
           </button>
 
           <button
-            onClick={() => setStatusFilter('PARTIAL')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center space-x-1 ${
-              statusFilter === 'PARTIAL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+            onClick={() => setFilter('PARTIAL')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+              filter === 'PARTIAL'
+                ? 'bg-semantic-amber/20 text-amber-400 border border-semantic-amber/40'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span>Partial 🟡</span>
-            <span>({partialCount})</span>
+            Partial ({partialCount})
           </button>
 
           <button
-            onClick={() => setStatusFilter('RESUME_ONLY')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center space-x-1 ${
-              statusFilter === 'RESUME_ONLY' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+            onClick={() => setFilter('RESUME_ONLY')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+              filter === 'RESUME_ONLY'
+                ? 'bg-semantic-red/20 text-red-400 border border-semantic-red/40'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span>Resume Only ⚪</span>
-            <span>({resumeOnlyCount})</span>
+            Missing ({missingCount})
           </button>
         </div>
       </div>
 
-      {/* Skill Matrix Table */}
-      <div className="glass-card rounded-xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="px-5 py-3.5">Technology / Skill</th>
-                <th className="px-5 py-3.5">Category</th>
-                <th className="px-5 py-3.5">Claimed Level</th>
-                <th className="px-5 py-3.5">GitHub Proof Status</th>
-                <th className="px-5 py-3.5">Evidence Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {filtered.map((item, idx) => {
-                let badgeStyle = 'bg-rose-950/40 text-rose-300 border-rose-500/40';
-                let icon = <HelpCircle className="w-3.5 h-3.5 text-rose-400" />;
-                let label = '⚪ Resume Only (No Code Proof)';
+      {/* Skills Congruence Audit Table Container */}
+      <div className="w-full overflow-x-auto no-scrollbar rounded-xl border border-border-subtle bg-surface">
+        <div className="min-w-[640px] w-full">
+          
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-border-subtle bg-surface-container-lowest sticky top-0 z-10">
+            <div className="col-span-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+              Skill
+            </div>
+            <div className="col-span-4 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+              Resume Claim
+            </div>
+            <div className="col-span-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+              GitHub Evidence
+            </div>
+            <div className="col-span-2 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider text-right">
+              Status
+            </div>
+          </div>
+
+          {/* Table Body */}
+          <div className="flex flex-col divide-y divide-border-subtle">
+            {filtered.length === 0 ? (
+              <div className="p-8 text-center text-xs text-on-surface-variant">
+                No skill items found matching the selected filter.
+              </div>
+            ) : (
+              filtered.map((item, idx) => {
+                let badgeClass = 'bg-semantic-red text-primary';
+                let statusLabel = 'Missing';
 
                 if (item.status === 'VERIFIED') {
-                  badgeStyle = 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40';
-                  icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-                  label = '🟢 Verified in GitHub Code';
+                  badgeClass = 'bg-semantic-emerald text-background';
+                  statusLabel = 'Verified';
                 } else if (item.status === 'PARTIAL') {
-                  badgeStyle = 'bg-amber-950/40 text-amber-300 border-amber-500/40';
-                  icon = <AlertCircle className="w-3.5 h-3.5 text-amber-400" />;
-                  label = '🟡 Partial Evidence';
+                  badgeClass = 'bg-semantic-amber text-background';
+                  statusLabel = 'Partial';
                 }
 
+                // Construct clean resume claim text
+                const claimQuote = `"${item.claimedLevel} proficiency in ${item.category}"`;
+                const githubProof = item.evidenceDetails || 'No public repositories found';
+
                 return (
-                  <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-5 py-4 font-bold text-white flex items-center space-x-2">
-                      <Code className="w-4 h-4 text-cyan-400" />
-                      <span>{item.skill}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono text-[10px]">
+                  <div
+                    key={idx}
+                    className="grid grid-cols-12 gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors group cursor-default items-center"
+                  >
+                    {/* Col 1: Skill */}
+                    <div className="col-span-3 flex items-center gap-2">
+                      <span className="font-mono text-xs font-semibold text-on-surface group-hover:text-primary transition-colors">
+                        {item.skill}
+                      </span>
+                      <span className="text-[10px] text-on-surface-variant px-1.5 py-0.5 rounded bg-surface-container-high border border-border-subtle">
                         {item.category}
                       </span>
-                    </td>
-                    <td className="px-5 py-4 font-medium text-slate-300">{item.claimedLevel}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeStyle}`}>
-                        {icon}
-                        <span>{label}</span>
+                    </div>
+
+                    {/* Col 2: Resume Claim */}
+                    <div className="col-span-4 flex items-center">
+                      <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors truncate">
+                        {claimQuote}
                       </span>
-                    </td>
-                    <td className="px-5 py-4 text-slate-400 text-[11px] leading-relaxed max-w-xs">
-                      {item.evidenceDetails}
-                      {item.githubRepoName && (
-                        <span className="block text-[10px] text-cyan-400 font-mono mt-0.5">
-                          Repo: {item.githubRepoName}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                    </div>
+
+                    {/* Col 3: GitHub Evidence */}
+                    <div className="col-span-3 flex items-center">
+                      <span className="text-xs text-on-surface-variant truncate">
+                        {githubProof}
+                      </span>
+                    </div>
+
+                    {/* Col 4: Status Badge */}
+                    <div className="col-span-2 flex items-center justify-end">
+                      <div className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider ${badgeClass}`}>
+                        {statusLabel}
+                      </div>
+                    </div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              })
+            )}
+          </div>
+
         </div>
       </div>
 
