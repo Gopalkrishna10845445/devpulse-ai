@@ -16,8 +16,8 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({
   activeSection,
-  candidateName = 'Alex Rivera',
-  targetRole = 'Software Engineer',
+  candidateName = 'No profile',
+  targetRole = 'Not set',
   onOpenMobileMenu,
   onOpenSearch,
   onExportPDF,
@@ -31,7 +31,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     aireview: 'AI Code Review & Bullet Optimizer',
     activity: 'ATS Activity & Metric Breakdown',
     insights: 'Technical Interview Q&A',
-    settings: 'Platform Settings & Presets',
+    settings: 'Settings & Demo Fixtures',
   };
 
   return (
@@ -69,7 +69,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           onClick={onOpenSearch}
           className="p-1.5 sm:px-3 sm:py-1 rounded-lg bg-surface hover:bg-surface-container-low border border-border-subtle text-body-sm text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5"
-          title="Search Candidate / GitHub Profiles"
+          title="Search"
         >
           <span className="material-symbols-outlined text-[16px] text-cyan-400">search</span>
           <span className="hidden sm:inline font-label-mono text-[11px]">Search</span>

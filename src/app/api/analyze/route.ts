@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     let usernameToAnalyze = githubUsername;
     let roleTitle = targetRoleTitle || 'Full-Stack Software Engineer';
 
-    // If preset requested
+    // Opt-in demo fixtures from Settings. Not live GitHub engineering data.
     if (presetId) {
       const preset = CANDIDATE_PRESETS.find(p => p.id === presetId);
       if (preset) {

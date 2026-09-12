@@ -14,18 +14,24 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
       {/* Title */}
       <div className="pt-2 pb-2">
         <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">GitHub Portfolio Audit</h2>
-        <p className="text-xs text-on-surface-variant">Public Code Repositories, Commit Velocity & Hygiene</p>
+        <p className="text-xs text-on-surface-variant">Public repositories from the GitHub API. Commit velocity and hygiene scores are not invented.</p>
       </div>
 
       {/* Profile Header Card */}
       <div className="p-5 rounded-xl bg-surface border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-4">
         
         <div className="flex items-center gap-4">
-          <img
-            src={github.avatarUrl}
-            alt={github.name}
-            className="w-14 h-14 rounded-full border border-border-subtle shadow-md"
-          />
+          {github.avatarUrl ? (
+            <img
+              src={github.avatarUrl}
+              alt={github.name || github.username}
+              className="w-14 h-14 rounded-full border border-border-subtle shadow-md"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full border border-border-subtle bg-surface-container-low flex items-center justify-center text-on-surface-variant text-sm">
+              {(github.name || github.username || '?').slice(0, 1).toUpperCase()}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-headline font-semibold text-base text-on-surface">{github.name}</h3>
@@ -49,22 +55,32 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
             <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Commit Streak</span>
             <span className="font-headline font-bold text-semantic-amber text-sm flex items-center justify-center gap-1">
               <span className="material-symbols-outlined text-[16px]">local_fire_department</span>
-              {github.activeCommitStreakDays} Days
+              {github.activeCommitStreakDays === null ? 'Unavailable' : `${github.activeCommitStreakDays} Days`}
             </span>
           </div>
 
           <div className="text-center">
             <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Velocity</span>
-            <span className="font-headline font-bold text-on-surface text-sm">{github.recentCommitVelocity}/mo</span>
+            <span className="font-headline font-bold text-on-surface text-sm">
+              {github.recentCommitVelocity === null ? 'Unavailable' : `${github.recentCommitVelocity}/mo`}
+            </span>
           </div>
 
           <div className="text-center">
             <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">Hygiene</span>
-            <span className="font-headline font-bold text-semantic-emerald text-sm">{github.overallHygieneScore}/100</span>
+            <span className="font-headline font-bold text-semantic-emerald text-sm">
+              {github.overallHygieneScore === null ? 'Unavailable' : `${github.overallHygieneScore}/100`}
+            </span>
           </div>
         </div>
 
       </div>
+
+      {github.unavailableReason && (
+        <div className="p-4 rounded-xl bg-surface border border-semantic-amber/30 text-xs text-on-surface-variant">
+          Engineering data unavailable. {github.unavailableReason}
+        </div>
+      )}
 
       {/* Language Distribution */}
       <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
@@ -121,7 +137,7 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
                 </div>
 
                 <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-[10px] font-mono border border-border-subtle">
-                  {repo.codeQualityScore}/100
+                  {repo.codeQualityScore === null ? 'Quality unavailable' : `${repo.codeQualityScore}/100`}
                 </span>
               </div>
 
@@ -140,13 +156,13 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
 
                 <div className="flex items-center gap-1 text-[10px]">
                   <span className={`px-1.5 py-0.5 rounded ${repo.hasCiWorkflow ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
-                    CI/CD
+                    {repo.hasCiWorkflow === null ? 'CI unknown' : 'CI/CD'}
                   </span>
                   <span className={`px-1.5 py-0.5 rounded ${repo.hasTests ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
-                    Tests
+                    {repo.hasTests === null ? 'Tests unknown' : 'Tests'}
                   </span>
                   <span className={`px-1.5 py-0.5 rounded ${repo.hasReadme ? 'bg-semantic-emerald/10 text-emerald-400' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
-                    Docs
+                    {repo.hasReadme === null ? 'Docs unknown' : 'Docs'}
                   </span>
                 </div>
               </div>

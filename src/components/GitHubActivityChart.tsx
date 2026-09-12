@@ -18,7 +18,7 @@ export const GitHubActivityChart: React.FC<GitHubActivityChartProps> = ({ github
             <span className="material-symbols-outlined text-[18px] text-cyan-400">code_blocks</span>
             <span>GitHub Repository Intelligence</span>
           </h3>
-          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Public repositories, commit cadence & language distribution</p>
+          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Inspected public repositories and language labels from the GitHub API</p>
         </div>
 
         <div className="flex items-center gap-3 font-label-mono text-xs">
@@ -26,7 +26,9 @@ export const GitHubActivityChart: React.FC<GitHubActivityChartProps> = ({ github
           <span className="text-on-surface-variant/40">•</span>
           <span className="text-semantic-amber">{github.totalStars} ★</span>
           <span className="text-on-surface-variant/40">•</span>
-          <span className="text-cyan-400">{github.recentCommitVelocity} commits/mo</span>
+          <span className="text-cyan-400">
+            {github.recentCommitVelocity === null ? 'Commits/mo unavailable' : `${github.recentCommitVelocity} commits/mo`}
+          </span>
         </div>
       </div>
 
@@ -34,7 +36,9 @@ export const GitHubActivityChart: React.FC<GitHubActivityChartProps> = ({ github
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs">
           <span className="font-label-caps text-label-caps text-on-surface-variant/80 uppercase tracking-wider">Language Share</span>
-          <span className="font-label-mono text-[10px] text-semantic-emerald font-semibold">{github.activeCommitStreakDays} Day Streak</span>
+          <span className="font-label-mono text-[10px] text-on-surface-variant/70 font-semibold">
+            {github.activeCommitStreakDays === null ? 'Streak unavailable' : `${github.activeCommitStreakDays} Day Streak`}
+          </span>
         </div>
 
         <div className="w-full h-2 rounded-full bg-surface-container-lowest border border-white/5 overflow-hidden flex">
@@ -74,7 +78,7 @@ export const GitHubActivityChart: React.FC<GitHubActivityChartProps> = ({ github
                 <span className="material-symbols-outlined text-[12px] text-on-surface-variant/70 flex-shrink-0">open_in_new</span>
               </a>
               <span className="px-2 py-0.5 rounded bg-surface-container-low text-cyan-300 font-label-mono text-[10px] border border-border-subtle">
-                {repo.codeQualityScore}/100
+                {repo.codeQualityScore === null ? 'n/a' : `${repo.codeQualityScore}/100`}
               </span>
             </div>
 

@@ -57,13 +57,13 @@ export interface RepositoryMetadata {
   stars: number;
   forks: number;
   updatedAt: string;
-  hasReadme: boolean;
-  hasCiWorkflow: boolean;
-  hasTests: boolean;
+  hasReadme: boolean | null;
+  hasCiWorkflow: boolean | null;
+  hasTests: boolean | null;
   hasLicense: boolean;
-  commitCount30Days: number;
-  prMergeRatio: number; // 0-100
-  codeQualityScore: number; // 0-100
+  commitCount30Days: number | null;
+  prMergeRatio: number | null;
+  codeQualityScore: number | null;
 }
 
 export interface GitHubTelemetry {
@@ -77,10 +77,11 @@ export interface GitHubTelemetry {
   accountAgeYears: number;
   languages: { name: string; percentage: number; color: string }[];
   topRepositories: RepositoryMetadata[];
-  activeCommitStreakDays: number;
-  recentCommitVelocity: number; // commits per month
-  overallHygieneScore: number; // 0-100
+  activeCommitStreakDays: number | null;
+  recentCommitVelocity: number | null;
+  overallHygieneScore: number | null;
   isFallbackData?: boolean;
+  unavailableReason?: string;
 }
 
 export interface BulletRewrite {
@@ -101,10 +102,10 @@ export interface RecruiterQuestion {
 }
 
 export interface QuadrantScores {
-  atsFormatting: number; // 0-100
-  impactAndStarBullets: number; // 0-100
-  githubProofOfWork: number; // 0-100
-  codeHygieneAndArch: number; // 0-100
+  atsFormatting: number | null;
+  impactAndStarBullets: number | null;
+  githubProofOfWork: number | null;
+  codeHygieneAndArch: number | null;
 }
 
 export interface CandidateProfilePreset {
@@ -121,7 +122,7 @@ export interface CandidateProfilePreset {
 export interface FullEvaluationReport {
   candidateName: string;
   targetRole: string;
-  overallScore: number; // 0-100
+  overallScore: number | null;
   quadrants: QuadrantScores;
   deterministic: DeterministicMetrics;
   github: GitHubTelemetry;

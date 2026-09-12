@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { CANDIDATE_PRESETS } from '@/lib/mockData';
 
 export type NavSection = 'overview' | 'github' | 'skills' | 'aireview' | 'activity' | 'insights' | 'settings';
 
@@ -86,37 +85,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
 
-        {/* Candidate Switcher Section */}
+        {/* Demo fixtures are opt-in under Settings — not production GitHub profiles */}
         <div className="pt-5 px-2.5 pb-2 font-label-caps text-label-caps text-on-surface-variant/60 uppercase tracking-widest border-t border-border-subtle mt-4">
-          Candidate Profiles
+          Profiles
         </div>
-        <div className="space-y-1">
-          {CANDIDATE_PRESETS.map((preset) => {
-            const isSelected = activePresetId === preset.id;
-            return (
-              <button
-                key={preset.id}
-                onClick={() => {
-                  onSelectPreset(preset.id);
-                  onCloseMobile();
-                }}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-all flex items-center justify-between ${
-                  isSelected
-                    ? 'bg-surface-container-low border border-cyan-500/30 text-cyan-300'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-white/[0.04] border border-transparent'
-                }`}
-              >
-                <div className="truncate">
-                  <div className="font-headline font-medium text-xs truncate text-on-surface">{preset.name}</div>
-                  <div className="font-body-sm text-[11px] text-on-surface-variant/70 truncate">{preset.roleTitle}</div>
-                </div>
-                <span className="font-label-mono text-[9px] text-on-surface-variant px-1.5 py-0.5 rounded bg-surface border border-border-subtle">
-                  {preset.experienceLevel}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <p className="px-3 py-2 text-[11px] text-on-surface-variant/80 leading-relaxed">
+          No hard-coded GitHub profiles are loaded here. Use Settings to paste a handle or opt in to a labeled demo fixture.
+        </p>
+        {activePresetId && (
+          <p className="px-3 py-1 text-[10px] font-mono text-cyan-400">Active demo fixture: {activePresetId}</p>
+        )}
       </div>
 
       {/* System Status Footer */}

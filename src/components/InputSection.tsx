@@ -42,7 +42,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   : 'text-[#8e9192] hover:text-white'
               }`}
             >
-              1-Click Candidate Presets
+              1-Click Demo Fixtures
             </button>
 
             <button
@@ -57,7 +57,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </button>
           </div>
 
-          <span className="text-[11px] font-mono text-[#8e9192] hidden sm:block">Zero Friction Testing</span>
+          <span className="text-[11px] font-mono text-[#8e9192] hidden sm:block">Demo data is labeled</span>
         </div>
 
         {/* TAB 1: PRESETS */}
@@ -133,7 +133,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
               </label>
               <textarea
                 rows={5}
-                placeholder="Paste full candidate resume text here..."
+                placeholder="Paste source text (resume or notes). Not treated as live GitHub telemetry."
                 value={customResumeText}
                 onChange={(e) => setCustomResumeText(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg bg-[#0e0e10] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-white/40 leading-relaxed"

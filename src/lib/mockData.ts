@@ -1,4 +1,9 @@
-import { CandidateProfilePreset, GitHubTelemetry, FullEvaluationReport } from './types';
+/**
+ * DEMO FIXTURES ONLY — not production GitHub or engineering telemetry.
+ * Isolated for opt-in Settings analysis of the resume heuristic engine.
+ * Do not merge these profiles into live GitHub API responses.
+ */
+import { CandidateProfilePreset, GitHubTelemetry } from './types';
 
 export const CANDIDATE_PRESETS: CandidateProfilePreset[] = [
   {

@@ -1,5 +1,4 @@
 import { GitHubTelemetry, RepositoryMetadata } from './types';
-import { MOCK_GITHUB_TELEMETRY } from './mockData';
 
 const LANGUAGE_COLORS: Record<string, string> = {
   TypeScript: '#3178c6',
@@ -15,31 +14,80 @@ const LANGUAGE_COLORS: Record<string, string> = {
   Ruby: '#701516',
 };
 
+export function unavailableGitHubTelemetry(
+  username: string,
+  reason: string
+): GitHubTelemetry {
+  return {
+    username: username || '',
+    name: username || '',
+    avatarUrl: '',
+    bio: '',
+    publicReposCount: 0,
+    totalStars: 0,
+    totalForks: 0,
+    accountAgeYears: 0,
+    languages: [],
+    topRepositories: [],
+    activeCommitStreakDays: null,
+    recentCommitVelocity: null,
+    overallHygieneScore: null,
+    isFallbackData: true,
+    unavailableReason: reason,
+  };
+}
+
 export async function fetchGitHubTelemetry(username: string): Promise<GitHubTelemetry> {
   const cleanUsername = username.replace(/https?:\/\/github\.com\//i, '').replace(/\/$/, '').trim();
 
-  // Check preset mock data first for instant 1-click speed
-  if (MOCK_GITHUB_TELEMETRY[cleanUsername.toLowerCase()]) {
-    return MOCK_GITHUB_TELEMETRY[cleanUsername.toLowerCase()];
+  if (!cleanUsername) {
+    return unavailableGitHubTelemetry('', 'No GitHub username provided');
   }
 
   try {
     const headers: Record<string, string> = {
       'User-Agent': 'DevPulse-AI-Evaluator',
-      'Accept': 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github.v3+json',
     };
     if (process.env.GITHUB_TOKEN) {
-      headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      headers.Authorization = `token ${process.env.GITHUB_TOKEN}`;
     }
 
-    const userRes = await fetch(`https://api.github.com/users/${cleanUsername}`, { headers });
+    const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(cleanUsername)}`, { headers });
+
+    if (userRes.status === 404) {
+      return unavailableGitHubTelemetry(cleanUsername, `GitHub user "${cleanUsername}" was not found`);
+    }
+    if (userRes.status === 403 || userRes.status === 429) {
+      return unavailableGitHubTelemetry(
+        cleanUsername,
+        'GitHub API rate limit or access denied. Set GITHUB_TOKEN on the server to continue.'
+      );
+    }
     if (!userRes.ok) {
-      throw new Error(`GitHub API returned status ${userRes.status}`);
+      return unavailableGitHubTelemetry(
+        cleanUsername,
+        `GitHub API returned status ${userRes.status}`
+      );
     }
 
     const userData = await userRes.json();
-    const reposRes = await fetch(`https://api.github.com/users/${cleanUsername}/repos?sort=updated&per_page=15`, { headers });
+    const reposRes = await fetch(
+      `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?sort=updated&per_page=15`,
+      { headers }
+    );
+
+    if (reposRes.status === 403 || reposRes.status === 429) {
+      return unavailableGitHubTelemetry(
+        cleanUsername,
+        'GitHub API rate limit or access denied while listing repositories. Set GITHUB_TOKEN on the server to continue.'
+      );
+    }
+
     const reposData = reposRes.ok ? await reposRes.json() : [];
+    if (!Array.isArray(reposData)) {
+      return unavailableGitHubTelemetry(cleanUsername, 'GitHub repository list was not a valid array');
+    }
 
     let totalStars = 0;
     let totalForks = 0;
@@ -55,19 +103,19 @@ export async function fetchGitHubTelemetry(username: string): Promise<GitHubTele
 
       return {
         name: repo.name,
-        description: repo.description || 'Public repository on GitHub',
+        description: repo.description || '',
         url: repo.html_url,
-        language: repo.language || 'Plain Text',
+        language: repo.language || 'Unknown',
         stars: repo.stargazers_count || 0,
         forks: repo.forks_count || 0,
-        updatedAt: repo.updated_at ? repo.updated_at.split('T')[0] : '2026-01-01',
-        hasReadme: true, // Default assumed
-        hasCiWorkflow: repo.has_wiki || false,
-        hasTests: true,
+        updatedAt: repo.updated_at ? String(repo.updated_at).split('T')[0] : '',
+        hasReadme: null,
+        hasCiWorkflow: null,
+        hasTests: null,
         hasLicense: Boolean(repo.license),
-        commitCount30Days: Math.floor(Math.random() * 20) + 5,
-        prMergeRatio: Math.floor(Math.random() * 15) + 80,
-        codeQualityScore: Math.floor(Math.random() * 15) + 82,
+        commitCount30Days: null,
+        prMergeRatio: null,
+        codeQualityScore: null,
       };
     });
 
@@ -78,73 +126,32 @@ export async function fetchGitHubTelemetry(username: string): Promise<GitHubTele
       color: LANGUAGE_COLORS[name] || '#94a3b8',
     }));
 
-    const accountCreatedYear = new Date(userData.created_at || '2022-01-01').getFullYear();
-    const currentYear = new Date().getFullYear();
-    const accountAgeYears = Math.max(1, currentYear - accountCreatedYear);
-
-    // Compute overall hygiene score
-    const avgRepoStars = topRepositories.length ? totalStars / topRepositories.length : 0;
-    let overallHygieneScore = 75;
-    if (topRepositories.length > 5) overallHygieneScore += 10;
-    if (avgRepoStars > 5) overallHygieneScore += 10;
-    overallHygieneScore = Math.min(98, overallHygieneScore);
+    const createdAt = userData.created_at ? new Date(userData.created_at) : null;
+    const accountAgeYears = createdAt && !Number.isNaN(createdAt.getTime())
+      ? Math.max(0, new Date().getFullYear() - createdAt.getFullYear())
+      : 0;
 
     return {
       username: userData.login || cleanUsername,
-      name: userData.name || cleanUsername,
-      avatarUrl: userData.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      bio: userData.bio || 'Software Engineer on GitHub',
-      publicReposCount: userData.public_repos || topRepositories.length,
+      name: userData.name || userData.login || cleanUsername,
+      avatarUrl: userData.avatar_url || '',
+      bio: userData.bio || '',
+      publicReposCount: typeof userData.public_repos === 'number' ? userData.public_repos : topRepositories.length,
       totalStars,
       totalForks,
       accountAgeYears,
-      languages: languages.length > 0 ? languages : [{ name: 'TypeScript', percentage: 70, color: '#3178c6' }, { name: 'Python', percentage: 30, color: '#3572A5' }],
+      languages,
       topRepositories,
-      activeCommitStreakDays: Math.floor(Math.random() * 15) + 5,
-      recentCommitVelocity: Math.floor(Math.random() * 30) + 15,
-      overallHygieneScore,
+      activeCommitStreakDays: null,
+      recentCommitVelocity: null,
+      overallHygieneScore: null,
       isFallbackData: false,
     };
   } catch (error) {
-    console.warn(`[GitHub Analyzer] API call failed for ${cleanUsername}, utilizing smart fallback:`, error);
-    
-    // Fallback generator
-    return {
-      username: cleanUsername,
-      name: cleanUsername.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      bio: 'Full Stack Engineer & GitHub Contributor',
-      publicReposCount: 12,
-      totalStars: 35,
-      totalForks: 8,
-      accountAgeYears: 3,
-      languages: [
-        { name: 'TypeScript', percentage: 60, color: '#3178c6' },
-        { name: 'JavaScript', percentage: 25, color: '#f1e05a' },
-        { name: 'Python', percentage: 15, color: '#3572A5' }
-      ],
-      topRepositories: [
-        {
-          name: `${cleanUsername}-core`,
-          description: 'Core application engine & microservice services',
-          url: `https://github.com/${cleanUsername}/${cleanUsername}-core`,
-          language: 'TypeScript',
-          stars: 24,
-          forks: 5,
-          updatedAt: '2026-08-15',
-          hasReadme: true,
-          hasCiWorkflow: true,
-          hasTests: true,
-          hasLicense: true,
-          commitCount30Days: 14,
-          prMergeRatio: 90,
-          codeQualityScore: 85,
-        }
-      ],
-      activeCommitStreakDays: 10,
-      recentCommitVelocity: 22,
-      overallHygieneScore: 82,
-      isFallbackData: true,
-    };
+    console.warn(`[GitHub Analyzer] API call failed for ${cleanUsername}:`, error);
+    return unavailableGitHubTelemetry(
+      cleanUsername,
+      'GitHub API request failed. Engineering data unavailable.'
+    );
   }
 }

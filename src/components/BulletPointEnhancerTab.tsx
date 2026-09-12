@@ -12,7 +12,8 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [customInput, setCustomInput] = useState('');
   const [customRewrites, setCustomRewrites] = useState<BulletRewrite[]>([]);
-  const [isRewritingCustom, setIsRewritingCustom] = useState(false);
+  const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [isRewritingCustom, setIsRewritingCustom] = useState<boolean>(false);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -25,18 +26,23 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
     if (!customInput || customInput.trim().length < 10) return;
     setIsRewritingCustom(true);
 
+    setRewriteError(null);
+
     try {
       const res = await fetch('/api/rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bulletPoint: customInput }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const data = await res.json();
         setCustomRewrites([data, ...customRewrites]);
         setCustomInput('');
+      } else {
+        setRewriteError(data.error || 'AI rewrite unavailable');
       }
     } catch (err) {
+      setRewriteError('AI rewrite unavailable');
       console.error('Failed to rewrite bullet point:', err);
     } finally {
       setIsRewritingCustom(false);
@@ -91,7 +97,7 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
         <form onSubmit={handleCustomRewriteSubmit} className="flex flex-col sm:flex-row gap-2 items-center">
           <input
             type="text"
-            placeholder="Paste any weak resume bullet point to rewrite live (e.g. Worked on performance)..."
+            placeholder="Paste source text. Rewrites require a real model in a later phase."
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
             className="flex-1 w-full px-4 py-2 rounded-lg bg-surface-container-lowest border border-border-subtle text-xs text-on-surface focus:outline-none focus:border-white/40"
@@ -105,7 +111,12 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
             <span>Generate Rewrites</span>
           </button>
         </form>
+        {rewriteError && <p className="text-xs text-semantic-amber mt-2">{rewriteError}</p>}
       </div>
+
+      {allRewrites.length === 0 && !rewriteError && (
+        <p className="text-xs text-on-surface-variant">AI rewrite unavailable. Fabricated achievements are not generated.</p>
+      )}
 
       {/* Rewrites Cards List */}
       <div className="space-y-3">

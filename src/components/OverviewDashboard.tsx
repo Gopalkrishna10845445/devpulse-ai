@@ -38,22 +38,21 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricCard
             label="Overall Score"
-            value={`${report.overallScore}/100`}
-            subtext={report.keyTakeaways.hiringRecommendation}
+            value={report.overallScore === null ? 'Unavailable' : `${report.overallScore}/100`}
+            subtext={report.overallScore === null ? 'Engineering data unavailable' : report.keyTakeaways.hiringRecommendation}
             icon="equalizer"
             status="cyan"
-            trend="+12%"
           />
           <MetricCard
             label="Code Quality"
-            value={`${report.github.overallHygieneScore}/100`}
-            subtext="Clean AST & repo hygiene"
+            value={report.github.overallHygieneScore === null ? 'Unavailable' : `${report.github.overallHygieneScore}/100`}
+            subtext={report.github.unavailableReason || 'Repo hygiene not calculated'}
             icon="code_blocks"
             status="emerald"
           />
           <MetricCard
             label="GitHub Activity"
-            value={`${report.github.recentCommitVelocity}/mo`}
+            value={report.github.recentCommitVelocity === null ? 'Unavailable' : `${report.github.recentCommitVelocity}/mo`}
             subtext={`${report.github.publicReposCount} Repositories`}
             icon="commit"
             status="purple"
@@ -74,7 +73,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           />
           <MetricCard
             label="Commit Streak"
-            value={`${report.github.activeCommitStreakDays} Days`}
+            value={report.github.activeCommitStreakDays === null ? 'Unavailable' : `${report.github.activeCommitStreakDays} Days`}
             subtext={`${report.github.totalStars} Total Stars`}
             icon="local_fire_department"
             status="amber"
@@ -102,7 +101,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
               <span className="material-symbols-outlined text-[18px] text-semantic-emerald">verified</span>
               <span>Skills Convergence Matrix</span>
             </h3>
-            <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Resume claimed skills vs actual GitHub open-source code proof</p>
+            <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Skills mentioned in source text vs languages on inspected GitHub repositories</p>
           </div>
 
           <button

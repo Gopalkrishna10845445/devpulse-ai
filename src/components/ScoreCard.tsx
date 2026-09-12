@@ -4,7 +4,7 @@ import React from 'react';
 import { QuadrantScores } from '@/lib/types';
 
 interface ScoreCardProps {
-  overallScore: number;
+  overallScore: number | null;
   candidateName: string;
   targetRole: string;
   recommendation: string;
@@ -41,7 +41,7 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
             <span className="material-symbols-outlined text-[18px] text-cyan-400">equalizer</span>
             <span>Engineering Score Matrix</span>
           </h3>
-          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Multi-signal assessment based on deterministic rules and GitHub code telemetry</p>
+          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Resume heuristics are shown where calculated. GitHub engineering scores stay unavailable until real evidence exists.</p>
         </div>
 
         <span className={`px-2.5 py-1 rounded border font-label-caps text-[10px] uppercase tracking-wider font-semibold ${getBadgeStyle(recommendation)}`}>
@@ -56,8 +56,8 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
         <div className="md:col-span-4 flex flex-col items-center justify-center p-5 rounded-xl bg-surface-container-lowest border border-border-subtle text-center">
           <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-surface-container">
             <div className="w-full h-full rounded-full bg-surface flex flex-col items-center justify-center border border-border-subtle">
-              <span className="font-mono text-4xl font-bold text-primary tracking-tight">{overallScore}</span>
-              <span className="font-label-mono text-[10px] text-on-surface-variant/70 uppercase">/ 100</span>
+              <span className="font-mono text-4xl font-bold text-primary tracking-tight">{overallScore === null ? '—' : overallScore}</span>
+              <span className="font-label-mono text-[10px] text-on-surface-variant/70 uppercase">{overallScore === null ? 'Unavailable' : '/ 100'}</span>
             </div>
           </div>
           <div className="mt-3.5">
@@ -76,12 +76,12 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
                   {q.label}
                   <span className="font-label-mono text-[10px] text-on-surface-variant/60">({q.weight})</span>
                 </span>
-                <span className="font-label-mono font-semibold text-primary">{q.score}/100</span>
+                <span className="font-label-mono font-semibold text-primary">{q.score === null ? 'Unavailable' : `${q.score}/100`}</span>
               </div>
               <div className="w-full h-2 rounded-full bg-surface-container-low border border-white/5 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-cyan-400 transition-all duration-500"
-                  style={{ width: `${q.score}%` }}
+                  style={{ width: `${q.score === null ? 0 : q.score}%` }}
                 />
               </div>
             </div>
