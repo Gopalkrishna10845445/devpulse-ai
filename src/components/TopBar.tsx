@@ -26,6 +26,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const sectionTitles: Record<NavSection, string> = {
     overview: 'Overview Dashboard',
+    ingestion: 'Repository Ingestion & Indexing',
     github: 'GitHub & Repository Intelligence',
     skills: 'Skills Convergence Matrix',
     aireview: 'AI Code Review & Bullet Optimizer',

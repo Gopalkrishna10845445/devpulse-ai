@@ -11,6 +11,7 @@ import { EngineeringHealthTab } from '@/components/EngineeringHealthTab';
 import { InvestigationTab } from '@/components/InvestigationTab';
 import { InputSection } from '@/components/InputSection';
 import { ExportReportModal } from '@/components/ExportReportModal';
+import { RepositoryIngestionTab } from '@/components/RepositoryIngestionTab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -106,6 +107,18 @@ export default function Home() {
             />
           )}
 
+          {activeSection === 'ingestion' && (
+            <div className="stagger-fade-up">
+              <RepositoryIngestionTab
+                initialRepoFullName={
+                  report?.github?.topRepositories?.[0]?.name && report?.github?.username
+                    ? `${report.github.username}/${report.github.topRepositories[0].name}`
+                    : 'Gopalkrishna10845445/devpulse-ai'
+                }
+              />
+            </div>
+          )}
+
           {activeSection === 'github' && (
             <div className="stagger-fade-up">
               <GitHubAuditTab github={report.github} />
@@ -157,23 +170,29 @@ export default function Home() {
           )}
         </>
       ) : (
-        <div className="stagger-fade-up space-y-6">
-          <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
-            <h2 className="font-headline text-lg font-semibold text-white mb-1">No profile loaded</h2>
-            <p className="text-xs text-[#8e9192] mb-4">
-              Engineering data unavailable until you provide resume text and an optional GitHub username, or explicitly load a demo fixture.
-            </p>
-            {evaluationError && (
-              <p className="text-xs text-red-400 mb-4">{evaluationError}</p>
-            )}
-            <InputSection
-              onAnalyze={handleCustomAnalyze}
-              onSelectPreset={handleSelectPreset}
-              isEvaluating={isEvaluating}
-              activePresetId={activePresetId}
-            />
+        activeSection === 'ingestion' ? (
+          <div className="stagger-fade-up">
+            <RepositoryIngestionTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
-        </div>
+        ) : (
+          <div className="stagger-fade-up space-y-6">
+            <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
+              <h2 className="font-headline text-lg font-semibold text-white mb-1">No profile loaded</h2>
+              <p className="text-xs text-[#8e9192] mb-4">
+                Engineering data unavailable until you provide resume text and an optional GitHub username, or explicitly load a demo fixture.
+              </p>
+              {evaluationError && (
+                <p className="text-xs text-red-400 mb-4">{evaluationError}</p>
+              )}
+              <InputSection
+                onAnalyze={handleCustomAnalyze}
+                onSelectPreset={handleSelectPreset}
+                isEvaluating={isEvaluating}
+                activePresetId={activePresetId}
+              />
+            </div>
+          </div>
+        )
       )}
 
       {report && (
