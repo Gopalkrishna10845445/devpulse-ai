@@ -3,26 +3,26 @@
 import React from 'react';
 import { DeterministicMetrics } from '@/lib/types';
 
-interface ATSBreakdownTabProps {
+interface EngineeringHealthTabProps {
   deterministic: DeterministicMetrics;
 }
 
-export const ATSBreakdownTab: React.FC<ATSBreakdownTabProps> = ({ deterministic }) => {
+export const EngineeringHealthTab: React.FC<EngineeringHealthTabProps> = ({ deterministic }) => {
   return (
     <div className="w-full flex flex-col space-y-4 stagger-fade-up">
       
       {/* Top Title */}
       <div className="pt-2 pb-2">
-        <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">ATS & Metric Heuristics</h2>
-        <p className="text-xs text-on-surface-variant">Deterministic Parser Audit & Quantification Density</p>
+        <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Text & Metric Heuristics</h2>
+        <p className="text-xs text-on-surface-variant">Deterministic parser audit — resume text structure, quantification density, and verb quality</p>
       </div>
 
-      {/* Top ATS Heuristic Scores */}
+      {/* Top Heuristic Scores */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         
         <div className="p-4 rounded-xl bg-surface border border-border-subtle flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold text-on-surface-variant">ATS Structure</p>
+            <p className="text-[11px] font-semibold text-on-surface-variant">Contact Structure</p>
             <p className="text-xl font-headline font-bold text-on-surface">{deterministic.atsComplianceScore}/100</p>
           </div>
           <span className="material-symbols-outlined text-[24px] text-on-surface-variant">assignment_turned_in</span>
@@ -38,7 +38,7 @@ export const ATSBreakdownTab: React.FC<ATSBreakdownTabProps> = ({ deterministic 
 
         <div className="p-4 rounded-xl bg-surface border border-border-subtle flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold text-on-surface-variant">Action Verb Score</p>
+            <p className="text-[11px] font-semibold text-on-surface-variant">Action Verbs</p>
             <p className="text-xl font-headline font-bold text-on-surface">{deterministic.actionVerbScore}/100</p>
           </div>
           <span className="material-symbols-outlined text-[24px] text-on-surface-variant">bolt</span>
@@ -58,7 +58,7 @@ export const ATSBreakdownTab: React.FC<ATSBreakdownTabProps> = ({ deterministic 
       <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
           <span className="material-symbols-outlined text-[16px] text-semantic-emerald">contact_page</span>
-          <span>Contact Info & Profile Validation</span>
+          <span>Contact Info & Profile Links</span>
         </h4>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -145,7 +145,7 @@ export const ATSBreakdownTab: React.FC<ATSBreakdownTabProps> = ({ deterministic 
         <div className="p-5 rounded-xl bg-surface border border-semantic-amber/30 text-on-surface space-y-2">
           <h4 className="text-xs font-semibold text-semantic-amber uppercase tracking-wider flex items-center gap-2">
             <span className="material-symbols-outlined text-[16px]">warning</span>
-            <span>ATS Directives & Improvement Steps</span>
+            <span>Improvement Directives</span>
           </h4>
           <ul className="space-y-1 text-xs text-on-surface-variant">
             {deterministic.warnings.map((w, idx) => (

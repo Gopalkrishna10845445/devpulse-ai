@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { evaluateCandidate } from '@/lib/llmEvaluator';
+import { analyzeProfile } from '@/lib/profileEvaluator';
 import { CANDIDATE_PRESETS } from '@/lib/mockData';
 
 export async function POST(req: Request) {
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     let textToAnalyze = resumeText;
     let usernameToAnalyze = githubUsername;
-    let roleTitle = targetRoleTitle || 'Full-Stack Software Engineer';
+    let roleTitle = targetRoleTitle || 'Software Engineer';
 
     // Opt-in demo fixtures from Settings. Not live GitHub engineering data.
     if (presetId) {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const report = await evaluateCandidate(textToAnalyze, usernameToAnalyze, roleTitle);
+    const report = await analyzeProfile(textToAnalyze, usernameToAnalyze, roleTitle);
 
     return NextResponse.json(report);
   } catch (error: any) {

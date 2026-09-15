@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RecruiterQuestion } from '@/lib/types';
+import { InvestigationQuestion } from '@/lib/types';
 
-interface RecruiterQuestionsTabProps {
-  questions: RecruiterQuestion[];
+interface InvestigationTabProps {
+  questions: InvestigationQuestion[];
 }
 
-export const RecruiterQuestionsTab: React.FC<RecruiterQuestionsTabProps> = ({ questions }) => {
+export const InvestigationTab: React.FC<InvestigationTabProps> = ({ questions }) => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
   const toggleExpand = (idx: number) => {
@@ -20,8 +20,8 @@ export const RecruiterQuestionsTab: React.FC<RecruiterQuestionsTabProps> = ({ qu
       {/* Title */}
       <div className="flex items-center justify-between pt-2 pb-2">
         <div>
-          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Interview Technical Q&A</h2>
-          <p className="text-xs text-on-surface-variant">Tailored Questions for Identified Resume Gaps & GitHub Claims</p>
+          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Repository Investigation Q&A</h2>
+          <p className="text-xs text-on-surface-variant">Targeted questions derived from GitHub signal gaps and resume claims</p>
         </div>
 
         <span className="px-3 py-1 rounded-full bg-surface border border-border-subtle text-xs font-mono text-on-surface">

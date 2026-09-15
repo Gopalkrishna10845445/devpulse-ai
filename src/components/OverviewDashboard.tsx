@@ -5,7 +5,7 @@ import { FullEvaluationReport } from '@/lib/types';
 import { MetricCard } from './MetricCard';
 import { ScoreCard } from './ScoreCard';
 import { GitHubActivityChart } from './GitHubActivityChart';
-import { SkillCongruenceTab } from './SkillCongruenceTab';
+import { TechnologyIntelligenceTab } from './TechnologyIntelligenceTab';
 import { AIReviewPanel } from './AIReviewPanel';
 import { ActivityFeed } from './ActivityFeed';
 
@@ -39,21 +39,21 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <MetricCard
             label="Overall Score"
             value={report.overallScore === null ? 'Unavailable' : `${report.overallScore}/100`}
-            subtext={report.overallScore === null ? 'Engineering data unavailable' : report.keyTakeaways.hiringRecommendation}
+            subtext={report.overallScore === null ? 'Engineering data unavailable' : report.keyTakeaways.engineeringAssessment}
             icon="equalizer"
             status="cyan"
           />
           <MetricCard
             label="Code Quality"
             value={report.github.overallHygieneScore === null ? 'Unavailable' : `${report.github.overallHygieneScore}/100`}
-            subtext={report.github.unavailableReason || 'Repo hygiene not calculated'}
+            subtext={report.github.isFallbackData ? 'GitHub unavailable' : `${report.github.deepInspectedRepos} repos scored`}
             icon="code_blocks"
             status="emerald"
           />
           <MetricCard
             label="GitHub Activity"
-            value={report.github.recentCommitVelocity === null ? 'Unavailable' : `${report.github.recentCommitVelocity}/mo`}
-            subtext={`${report.github.publicReposCount} Repositories`}
+            value={report.github.recentCommitVelocity === null ? 'Unavailable' : `${report.github.recentCommitVelocity}/wk`}
+            subtext={`${report.github.commitCount30Days ?? 'Unknown'} commits in 30 days`}
             icon="commit"
             status="purple"
           />
@@ -84,9 +84,9 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
       {/* 2. Engineering Score & 4-Quadrant Competency Matrix */}
       <ScoreCard
         overallScore={report.overallScore}
-        candidateName={report.candidateName}
+        profileName={report.profileName}
         targetRole={report.targetRole}
-        recommendation={report.keyTakeaways.hiringRecommendation}
+        recommendation={report.keyTakeaways.engineeringAssessment}
         quadrants={report.quadrants}
       />
 
@@ -113,9 +113,9 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           </button>
         </div>
 
-        <SkillCongruenceTab
+        <TechnologyIntelligenceTab
           skillMatrix={report.skillMatrix}
-          candidateName={report.candidateName}
+          profileName={report.profileName}
         />
       </div>
 

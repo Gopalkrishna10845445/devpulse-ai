@@ -5,7 +5,7 @@ import { QuadrantScores } from '@/lib/types';
 
 interface ScoreCardProps {
   overallScore: number | null;
-  candidateName: string;
+  profileName: string;
   targetRole: string;
   recommendation: string;
   quadrants: QuadrantScores;
@@ -13,22 +13,22 @@ interface ScoreCardProps {
 
 export const ScoreCard: React.FC<ScoreCardProps> = ({
   overallScore,
-  candidateName,
+  profileName,
   targetRole,
   recommendation,
   quadrants,
 }) => {
   const getBadgeStyle = (rec: string) => {
-    if (rec === 'Strong Hire') return 'bg-semantic-emerald/15 text-semantic-emerald border-semantic-emerald/30';
-    if (rec === 'Hire with Technical Interview') return 'bg-semantic-amber/15 text-semantic-amber border-semantic-amber/30';
-    return 'bg-semantic-red/15 text-semantic-red border-semantic-red/30';
+    if (rec === 'Strong') return 'bg-semantic-emerald/15 text-semantic-emerald border-semantic-emerald/30';
+    if (rec === 'Conditional') return 'bg-semantic-amber/15 text-semantic-amber border-semantic-amber/30';
+    return 'bg-surface-container border-border-subtle text-on-surface-variant';
   };
 
   const quadrantList = [
-    { label: 'ATS & Formatting', score: quadrants.atsFormatting, weight: '25%' },
-    { label: 'Impact & STAR Bullets', score: quadrants.impactAndStarBullets, weight: '35%' },
-    { label: 'GitHub Proof-of-Work', score: quadrants.githubProofOfWork, weight: '20%' },
-    { label: 'Code Hygiene & Depth', score: quadrants.codeHygieneAndArch, weight: '20%' },
+    { label: 'Contact & Structure', score: quadrants.atsFormatting, weight: '25%' },
+    { label: 'Impact & STAR Bullets', score: quadrants.impactAndStarBullets, weight: '25%' },
+    { label: 'GitHub Proof-of-Work', score: quadrants.githubProofOfWork, weight: '25%' },
+    { label: 'Commit Velocity Score', score: quadrants.codeHygieneAndArch, weight: '25%' },
   ];
 
   return (
@@ -61,7 +61,7 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
             </div>
           </div>
           <div className="mt-3.5">
-            <div className="font-headline font-semibold text-xs text-primary">{candidateName}</div>
+            <div className="font-headline font-semibold text-xs text-primary">{profileName}</div>
             <div className="font-label-mono text-[10px] text-on-surface-variant/70 mt-0.5">{targetRole}</div>
           </div>
         </div>

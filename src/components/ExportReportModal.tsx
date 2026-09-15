@@ -23,19 +23,19 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({ report, is
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `DevPulse-Report-${report.candidateName.replace(/\s+/g, '-')}.json`);
+    downloadAnchor.setAttribute("download", `DevPilot-Report-${(report.profileName || 'profile').replace(/\s+/g, '-')}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   };
 
   const handleCopySummary = () => {
-    const summary = `DEVPULSE AI RECRUITER SCORECARD
-Candidate: ${report.candidateName}
+    const summary = `DEVPILOT ENGINEERING INTELLIGENCE REPORT
+Profile: ${report.profileName}
 Target Role: ${report.targetRole}
-Overall Score: ${report.overallScore}/100
-Hiring Recommendation: ${report.keyTakeaways.hiringRecommendation}
-ATS Score: ${report.quadrants.atsFormatting}/100 | GitHub Proof: ${report.quadrants.githubProofOfWork}/100
+Overall Score: ${report.overallScore ?? 'Unavailable'}/100
+Assessment: ${report.keyTakeaways.engineeringAssessment}
+Contact & Structure: ${report.quadrants.atsFormatting ?? 'N/A'}/100 | GitHub Hygiene: ${report.quadrants.githubProofOfWork ?? 'N/A'}/100
 Key Strengths: ${report.keyTakeaways.strengths.join('; ')}`;
 
     navigator.clipboard.writeText(summary);
@@ -51,7 +51,7 @@ Key Strengths: ${report.keyTakeaways.strengths.join('; ')}`;
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center space-x-2">
             <FileDown className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white">Export Recruiter Assessment Report</h3>
+            <h3 className="text-base font-bold text-white">Export Engineering Report</h3>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
             <X className="w-5 h-5" />
@@ -62,7 +62,7 @@ Key Strengths: ${report.keyTakeaways.strengths.join('; ')}`;
         <div className="glass-card p-5 rounded-xl border border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-sm font-bold text-white">{report.candidateName}</h4>
+              <h4 className="text-sm font-bold text-white">{report.profileName}</h4>
               <p className="text-xs text-cyan-400">{report.targetRole}</p>
             </div>
             <div className="text-right">
@@ -72,7 +72,7 @@ Key Strengths: ${report.keyTakeaways.strengths.join('; ')}`;
           </div>
 
           <div className="pt-3 border-t border-slate-800 text-xs text-slate-300 space-y-1">
-            <p><strong className="text-slate-200">Recommendation:</strong> {report.keyTakeaways.hiringRecommendation}</p>
+              <p><strong className="text-slate-200">Assessment:</strong> {report.keyTakeaways.engineeringAssessment}</p>
             <p><strong className="text-slate-200">GitHub Profile:</strong> @{report.github.username} ({report.github.totalStars} stars, {report.github.publicReposCount} repos)</p>
           </div>
         </div>

@@ -5,10 +5,10 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { NavSection } from '@/components/Sidebar';
 import { OverviewDashboard } from '@/components/OverviewDashboard';
 import { GitHubAuditTab } from '@/components/GitHubAuditTab';
-import { SkillCongruenceTab } from '@/components/SkillCongruenceTab';
+import { TechnologyIntelligenceTab } from '@/components/TechnologyIntelligenceTab';
 import { BulletPointEnhancerTab } from '@/components/BulletPointEnhancerTab';
-import { ATSBreakdownTab } from '@/components/ATSBreakdownTab';
-import { RecruiterQuestionsTab } from '@/components/RecruiterQuestionsTab';
+import { EngineeringHealthTab } from '@/components/EngineeringHealthTab';
+import { InvestigationTab } from '@/components/InvestigationTab';
 import { InputSection } from '@/components/InputSection';
 import { ExportReportModal } from '@/components/ExportReportModal';
 import { FullEvaluationReport } from '@/lib/types';
@@ -43,6 +43,7 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         setReport(data);
+        setActiveSection('overview');
       } else {
         const errBody = await res.json().catch(() => ({}));
         setEvaluationError(errBody.error || 'Evaluation failed');
@@ -79,7 +80,7 @@ export default function Home() {
       onSelectSection={setActiveSection}
       activePresetId={activePresetId}
       onSelectPreset={handleSelectPreset}
-      candidateName={report?.candidateName || 'No profile'}
+      candidateName={report?.profileName || 'No profile'}
       targetRole={report?.targetRole || 'Not set'}
       onExportPDF={() => setIsExportOpen(true)}
       onResetScan={handleResetScan}
@@ -89,10 +90,10 @@ export default function Home() {
         <div className="w-full my-16 p-12 rounded-xl bg-[#131315] border border-white/10 text-center space-y-4 shadow-2xl">
           <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
           <h3 className="font-headline font-semibold text-base text-white tracking-tight">
-            Loading available signals...
+            Fetching live GitHub signals...
           </h3>
           <p className="text-xs text-[#8e9192] max-w-md mx-auto">
-            Running resume heuristics and requesting live GitHub profile data. Invented GitHub metrics are not used.
+            Running resume heuristics and requesting real GitHub data. This may take 5–15 seconds depending on repository count. No invented metrics are used.
           </p>
         </div>
       ) : report ? (
@@ -113,9 +114,9 @@ export default function Home() {
 
           {activeSection === 'skills' && (
             <div className="stagger-fade-up p-5 rounded-xl bg-[#131315] border border-white/10">
-              <SkillCongruenceTab
+              <TechnologyIntelligenceTab
                 skillMatrix={report.skillMatrix}
-                candidateName={report.candidateName}
+                profileName={report.profileName}
               />
             </div>
           )}
@@ -128,22 +129,22 @@ export default function Home() {
 
           {activeSection === 'activity' && (
             <div className="stagger-fade-up">
-              <ATSBreakdownTab deterministic={report.deterministic} />
+              <EngineeringHealthTab deterministic={report.deterministic} />
             </div>
           )}
 
           {activeSection === 'insights' && (
             <div className="stagger-fade-up">
-              <RecruiterQuestionsTab questions={report.recruiterQuestions} />
+              <InvestigationTab questions={report.investigationQuestions} />
             </div>
           )}
 
           {activeSection === 'settings' && (
             <div className="stagger-fade-up space-y-6">
               <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
-                <h2 className="font-headline text-lg font-semibold text-white mb-1">Analyze Resume Text & GitHub Handle</h2>
+                <h2 className="font-headline text-lg font-semibold text-white mb-1">Analyze Profile</h2>
                 <p className="text-xs text-[#8e9192] mb-4">
-                  Paste source text and an optional GitHub username. Demo fixtures are labeled and are not live telemetry.
+                  Paste resume text and an optional GitHub username. Demo fixtures are labeled and are not live telemetry.
                 </p>
                 <InputSection
                   onAnalyze={handleCustomAnalyze}
@@ -158,7 +159,7 @@ export default function Home() {
       ) : (
         <div className="stagger-fade-up space-y-6">
           <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
-            <h2 className="font-headline text-lg font-semibold text-white mb-1">No evaluation loaded</h2>
+            <h2 className="font-headline text-lg font-semibold text-white mb-1">No profile loaded</h2>
             <p className="text-xs text-[#8e9192] mb-4">
               Engineering data unavailable until you provide resume text and an optional GitHub username, or explicitly load a demo fixture.
             </p>

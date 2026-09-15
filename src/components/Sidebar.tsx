@@ -24,10 +24,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems: { id: NavSection; label: string; icon: string; badge?: string }[] = [
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
     { id: 'github', label: 'GitHub Intelligence', icon: 'code_blocks' },
-    { id: 'skills', label: 'Skills Analysis', icon: 'verified' },
+    { id: 'skills', label: 'Technology Intelligence', icon: 'verified' },
     { id: 'aireview', label: 'AI Code Review', icon: 'auto_fix_high', badge: 'AI' },
-    { id: 'activity', label: 'ATS Activity', icon: 'bolt' },
-    { id: 'insights', label: 'Interview Q&A', icon: 'help_center' },
+    { id: 'activity', label: 'Text Heuristics', icon: 'bolt' },
+    { id: 'insights', label: 'Investigation Q&A', icon: 'help_center' },
     { id: 'settings', label: 'Settings & Config', icon: 'settings' },
   ];
 
@@ -41,8 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             D
           </div>
           <div className="flex flex-col">
-            <span className="font-headline font-semibold text-sm tracking-tight text-primary leading-none">DevPulse AI</span>
-            <span className="text-[10px] font-mono text-on-surface-variant/70 tracking-widest uppercase mt-0.5">Obsidian Pulse</span>
+            <span className="font-headline font-semibold text-sm tracking-tight text-primary leading-none">DevPilot</span>
+            <span className="text-[10px] font-mono text-on-surface-variant/70 tracking-widest uppercase mt-0.5">Engineering Intelligence</span>
           </div>
         </div>
         <span className="font-label-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-container-low border border-border-subtle text-cyan-400">

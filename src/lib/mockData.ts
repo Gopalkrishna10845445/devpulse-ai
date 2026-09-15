@@ -1,11 +1,14 @@
 /**
  * DEMO FIXTURES ONLY — not production GitHub or engineering telemetry.
- * Isolated for opt-in Settings analysis of the resume heuristic engine.
+ * Isolated for opt-in analysis of the resume heuristic engine.
  * Do not merge these profiles into live GitHub API responses.
+ *
+ * MOCK_GITHUB_TELEMETRY removed in Phase 1 — it was dead code (never consumed
+ * at runtime). All GitHub data now comes from the live GitHub API.
  */
-import { CandidateProfilePreset, GitHubTelemetry } from './types';
+import { DemoProfilePreset } from './types';
 
-export const CANDIDATE_PRESETS: CandidateProfilePreset[] = [
+export const CANDIDATE_PRESETS: DemoProfilePreset[] = [
   {
     id: 'alex-rivera',
     name: 'Alex Rivera',
@@ -134,167 +137,3 @@ EDUCATION
 B.S. in Data Science & Statistics | University of Illinois Urbana-Champaign | 2020`
   }
 ];
-
-export const MOCK_GITHUB_TELEMETRY: Record<string, GitHubTelemetry> = {
-  'alexrivera-dev': {
-    username: 'alexrivera-dev',
-    name: 'Alex Rivera',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    bio: 'Frontend developer passionate about React, TypeScript, and modern design systems.',
-    publicReposCount: 14,
-    totalStars: 48,
-    totalForks: 12,
-    accountAgeYears: 2.5,
-    languages: [
-      { name: 'TypeScript', percentage: 58, color: '#3178c6' },
-      { name: 'JavaScript', percentage: 24, color: '#f1e05a' },
-      { name: 'CSS / Tailwind', percentage: 12, color: '#38bdf8' },
-      { name: 'HTML', percentage: 6, color: '#e34c26' },
-    ],
-    topRepositories: [
-      {
-        name: 'devpulse-ui',
-        description: 'Headless, accessible UI components in React and TypeScript',
-        url: 'https://github.com/alexrivera-dev/devpulse-ui',
-        language: 'TypeScript',
-        stars: 32,
-        forks: 8,
-        updatedAt: '2026-08-20',
-        hasReadme: true,
-        hasCiWorkflow: true,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 18,
-        prMergeRatio: 90,
-        codeQualityScore: 88,
-      },
-      {
-        name: 'ecommerce-saas',
-        description: 'Next.js App Router ecommerce dashboard with Stripe & Tailwind',
-        url: 'https://github.com/alexrivera-dev/ecommerce-saas',
-        language: 'TypeScript',
-        stars: 16,
-        forks: 4,
-        updatedAt: '2026-08-12',
-        hasReadme: true,
-        hasCiWorkflow: false,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 11,
-        prMergeRatio: 85,
-        codeQualityScore: 82,
-      }
-    ],
-    activeCommitStreakDays: 14,
-    recentCommitVelocity: 24,
-    overallHygieneScore: 84,
-    isFallbackData: true,
-  },
-  'sarahchen-arch': {
-    username: 'sarahchen-arch',
-    name: 'Sarah Chen',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    bio: 'Distributed Systems & Go Architect. Open-source maintainer.',
-    publicReposCount: 38,
-    totalStars: 1650,
-    totalForks: 240,
-    accountAgeYears: 7,
-    languages: [
-      { name: 'Go', percentage: 64, color: '#00add8' },
-      { name: 'TypeScript', percentage: 20, color: '#3178c6' },
-      { name: 'Python', percentage: 10, color: '#3572A5' },
-      { name: 'Rust', percentage: 6, color: '#dea584' },
-    ],
-    topRepositories: [
-      {
-        name: 'go-stream',
-        description: 'High-throughput distributed event stream engine in Go',
-        url: 'https://github.com/sarahchen-arch/go-stream',
-        language: 'Go',
-        stars: 1420,
-        forks: 195,
-        updatedAt: '2026-08-25',
-        hasReadme: true,
-        hasCiWorkflow: true,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 42,
-        prMergeRatio: 98,
-        codeQualityScore: 96,
-      },
-      {
-        name: 'k8s-cost-guard',
-        description: 'Automated Kubernetes pod cost analyzer & auto-scaling controller',
-        url: 'https://github.com/sarahchen-arch/k8s-cost-guard',
-        language: 'Go',
-        stars: 230,
-        forks: 45,
-        updatedAt: '2026-08-18',
-        hasReadme: true,
-        hasCiWorkflow: true,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 28,
-        prMergeRatio: 95,
-        codeQualityScore: 94,
-      }
-    ],
-    activeCommitStreakDays: 32,
-    recentCommitVelocity: 68,
-    overallHygieneScore: 96,
-    isFallbackData: true,
-  },
-  'marcusvance-data': {
-    username: 'marcusvance-data',
-    name: 'Marcus Vance',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    bio: 'Data Engineer focused on Python, FastAPI, Spark, and SQL pipelines.',
-    publicReposCount: 19,
-    totalStars: 85,
-    totalForks: 22,
-    accountAgeYears: 4,
-    languages: [
-      { name: 'Python', percentage: 72, color: '#3572A5' },
-      { name: 'SQL / HCL', percentage: 18, color: '#e38c00' },
-      { name: 'Dockerfile', percentage: 10, color: '#384d54' },
-    ],
-    topRepositories: [
-      {
-        name: 'fastapi-ml-serve',
-        description: 'Production template for serving ML models with FastAPI & Redis',
-        url: 'https://github.com/marcusvance-data/fastapi-ml-serve',
-        language: 'Python',
-        stars: 55,
-        forks: 14,
-        updatedAt: '2026-08-22',
-        hasReadme: true,
-        hasCiWorkflow: true,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 16,
-        prMergeRatio: 88,
-        codeQualityScore: 86,
-      },
-      {
-        name: 'airflow-s3-pipeline',
-        description: 'Modular Airflow DAG framework for S3 Parquet extraction',
-        url: 'https://github.com/marcusvance-data/airflow-s3-pipeline',
-        language: 'Python',
-        stars: 30,
-        forks: 8,
-        updatedAt: '2026-08-10',
-        hasReadme: true,
-        hasCiWorkflow: false,
-        hasTests: true,
-        hasLicense: true,
-        commitCount30Days: 12,
-        prMergeRatio: 82,
-        codeQualityScore: 80,
-      }
-    ],
-    activeCommitStreakDays: 9,
-    recentCommitVelocity: 28,
-    overallHygieneScore: 82,
-    isFallbackData: true,
-  }
-};
