@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export type NavSection = 'overview' | 'ingestion' | 'intelligence' | 'github' | 'skills' | 'aireview' | 'activity' | 'insights' | 'settings';
+export type NavSection = 'overview' | 'ingestion' | 'intelligence' | 'rag' | 'github' | 'skills' | 'aireview' | 'activity' | 'insights' | 'settings';
 
 interface SidebarProps {
   activeSection: NavSection;
@@ -25,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'overview', label: 'Overview', icon: 'dashboard' },
     { id: 'ingestion', label: 'Repository Ingestion', icon: 'account_tree', badge: 'Phase 2' },
     { id: 'intelligence', label: 'Codebase Intelligence', icon: 'schema', badge: 'Phase 3' },
+    { id: 'rag', label: 'Codebase Q&A (RAG)', icon: 'psychology', badge: 'Phase 4' },
     { id: 'github', label: 'GitHub Intelligence', icon: 'code_blocks' },
     { id: 'skills', label: 'Technology Intelligence', icon: 'verified' },
     { id: 'aireview', label: 'AI Code Review', icon: 'auto_fix_high', badge: 'AI' },

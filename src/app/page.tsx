@@ -13,6 +13,7 @@ import { InputSection } from '@/components/InputSection';
 import { ExportReportModal } from '@/components/ExportReportModal';
 import { RepositoryIngestionTab } from '@/components/RepositoryIngestionTab';
 import { CodebaseIntelligenceTab } from '@/components/CodebaseIntelligenceTab';
+import { CodebaseQATab } from '@/components/CodebaseQATab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -132,6 +133,18 @@ export default function Home() {
             </div>
           )}
 
+          {activeSection === 'rag' && (
+            <div className="stagger-fade-up">
+              <CodebaseQATab
+                initialRepoFullName={
+                  report?.github?.topRepositories?.[0]?.name && report?.github?.username
+                    ? `${report.github.username}/${report.github.topRepositories[0].name}`
+                    : 'Gopalkrishna10845445/devpulse-ai'
+                }
+              />
+            </div>
+          )}
+
           {activeSection === 'github' && (
             <div className="stagger-fade-up">
               <GitHubAuditTab github={report.github} />
@@ -190,6 +203,10 @@ export default function Home() {
         ) : activeSection === 'intelligence' ? (
           <div className="stagger-fade-up">
             <CodebaseIntelligenceTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
+          </div>
+        ) : activeSection === 'rag' ? (
+          <div className="stagger-fade-up">
+            <CodebaseQATab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
         ) : (
           <div className="stagger-fade-up space-y-6">

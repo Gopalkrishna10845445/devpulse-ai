@@ -28,6 +28,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     overview: 'Overview Dashboard',
     ingestion: 'Repository Ingestion & Indexing',
     intelligence: 'Codebase Intelligence & Architecture',
+    rag: 'Codebase RAG & Grounded Q&A',
     github: 'GitHub & Repository Intelligence',
     skills: 'Skills Convergence Matrix',
     aireview: 'AI Code Review & Bullet Optimizer',
