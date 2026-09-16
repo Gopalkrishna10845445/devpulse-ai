@@ -27,7 +27,7 @@ export interface ContextBuilderOptions {
 // ─── Secrets Redaction Patterns ──────────────────────────────────────────────
 
 const SENSITIVE_PATTERNS = [
-  /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,255}/g,           // GitHub tokens
+  /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{30,255}/g,           // GitHub tokens
   /github_pat_[A-Za-z0-9_]{82}/g,                             // Fine-grained PAT
   /sk-[A-Za-z0-9]{32,64}/g,                                   // OpenAI API keys
   /AIza[0-9A-Za-z-_]{35}/g,                                   // Google API keys

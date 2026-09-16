@@ -49,7 +49,7 @@ export class CodebaseRetriever {
     const pathMatches = question.match(/[a-zA-Z0-9_/-]+\.[a-zA-Z0-9]+/g) || [];
 
     let type: QueryIntent['type'] = 'general';
-    if (q.includes('what does this') || q.includes('overview') || q.includes('architecture') || q.includes('summary')) {
+    if (q.includes('what does this') || q.includes('overview') || q.includes('architecture') || q.includes('summary') || q.includes('content') || q.includes('purpose') || q.includes('what is this')) {
       type = 'overview';
     } else if (q.includes('auth') || q.includes('login') || q.includes('jwt') || q.includes('token') || q.includes('session')) {
       type = 'auth_flow';
@@ -145,6 +145,9 @@ export class CodebaseRetriever {
       if (intent.type === 'route_discovery' && (entry.chunk.filePath.includes('/api/') || entry.chunk.filePath.includes('route'))) {
         composite += 0.15;
       }
+      if (intent.type === 'data_access' && (entry.chunk.filePath.includes('db') || entry.chunk.filePath.includes('prisma') || entry.chunk.filePath.includes('schema') || entry.chunk.filePath.includes('model'))) {
+        composite += 0.15;
+      }
 
       composite = Math.min(1, composite);
 
@@ -167,6 +170,16 @@ export class CodebaseRetriever {
     if (expand && intelligence && topResults.length > 0) {
       const expandedChunks = this.expandStructuralContext(topResults, allChunks, intelligence);
       topResults = [...topResults, ...expandedChunks].slice(0, topK + 2);
+    }
+
+    // 6. Overview Fallback for High-Level Questions
+    if (topResults.length === 0 && intent.type === 'overview') {
+      const fallbackChunks = allChunks.slice(0, topK);
+      topResults = fallbackChunks.map(chunk => ({
+        chunk,
+        score: 0.5,
+        matchReason: 'structural_expansion',
+      }));
     }
 
     return topResults;

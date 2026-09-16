@@ -171,15 +171,37 @@ export class GroundedLLMClient {
 
     const qLower = question.toLowerCase();
 
-    // Check if query is asking for something not in any retrieved chunk
-    const allText = chunks.map(c => c.chunk.content.toLowerCase() + ' ' + c.chunk.filePath.toLowerCase()).join(' ');
+    // Context text including architecture overview header and chunks
+    const allText = (builtContext.promptContext + ' ' + chunks.map(c => c.chunk.content.toLowerCase() + ' ' + c.chunk.filePath.toLowerCase()).join(' ')).toLowerCase();
+    
+    const isOverviewQuestion =
+      qLower.includes('overview') ||
+      qLower.includes('architecture') ||
+      qLower.includes('purpose') ||
+      qLower.includes('content') ||
+      qLower.includes('summary') ||
+      qLower.includes('what does this') ||
+      qLower.includes('what is this');
+
+    const stopWords = new Set([
+      'what', 'where', 'which', 'explain', 'this', 'does', 'repository', 'codebase',
+      'project', 'implemented', 'overall', 'configured', 'from', 'with', 'have', 'show',
+      'work', 'works', 'flow', 'pattern', 'structure', 'about', 'tell', 'purpose',
+      'content', 'summary', 'overview', 'contain', 'contains', 'describe', 'description'
+    ]);
+
     const keywords = qLower
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(w => w.length > 3 && !['what', 'where', 'which', 'explain', 'this', 'does', 'repository'].includes(w));
+      .filter(w => w.length > 2 && !stopWords.has(w));
 
-    const matchedKw = keywords.filter(k => allText.includes(k));
-    if (keywords.length > 0 && matchedKw.length === 0) {
+    // Check if stem or substring matches
+    const matchedKw = keywords.filter(k => {
+      const stem = k.length > 4 ? k.slice(0, 4) : k;
+      return allText.includes(k) || allText.includes(stem);
+    });
+
+    if (!isOverviewQuestion && keywords.length > 0 && matchedKw.length === 0) {
       return {
         answer: `I couldn't find evidence about "${question}" in the indexed repository files.`,
         confidence: 'insufficient_evidence',

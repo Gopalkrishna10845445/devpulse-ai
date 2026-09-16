@@ -348,11 +348,13 @@ const FRAMEWORK_RULES: FrameworkRule[] = [
  * Detect frameworks from repository files and extracted dependencies.
  */
 export function detectFrameworks(
-  files: RepositoryFileNode[],
-  dependencies: RepositoryDependency[]
+  files: RepositoryFileNode[] = [],
+  dependencies: RepositoryDependency[] = []
 ): RepositoryFramework[] {
-  const depNamesSet = new Set(dependencies.map(d => d.name.toLowerCase()));
-  const allFileNames = files.map(f => f.path.split('/').pop() || '');
+  const safeDeps = dependencies || [];
+  const safeFiles = files || [];
+  const depNamesSet = new Set(safeDeps.map(d => d.name.toLowerCase()));
+  const allFileNames = safeFiles.map(f => f.path.split('/').pop() || '');
 
   const frameworks: RepositoryFramework[] = [];
 

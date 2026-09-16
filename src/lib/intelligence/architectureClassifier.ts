@@ -27,8 +27,10 @@ export function classifyArchitecture(params: {
 }): ArchitectureModel {
   const { repository, frameworks, modules, files, symbols, relationships } = params;
 
-  const frameworkNames = new Set(frameworks.map(f => f.name.toLowerCase()));
-  const moduleRoles = new Set(modules.map(m => m.detectedRole));
+  const safeFrameworks = frameworks || [];
+  const safeModules = modules || [];
+  const frameworkNames = new Set(safeFrameworks.map(f => f.name.toLowerCase()));
+  const moduleRoles = new Set(safeModules.map(m => m.detectedRole));
   const filePaths = files.map(f => f.filePath);
 
   // ── 1. Determine Architectural Pattern ──────────────────────────────────────
@@ -44,7 +46,7 @@ export function classifyArchitecture(params: {
   } else if (frameworkNames.has('react') || frameworkNames.has('vue.js') || frameworkNames.has('svelte / sveltekit')) {
     pattern = 'Single Page Application';
     summary = 'Client-side component-driven reactive web application architecture.';
-  } else if (modules.some(m => m.name === 'lib' || m.name === 'pkg') && files.length < 25) {
+  } else if (safeModules.some(m => m.name === 'lib' || m.name === 'pkg') && files.length < 25) {
     pattern = 'Library / Utility Package';
     summary = 'Specialized software library exposing modular public APIs and utility heuristics.';
   } else if (moduleRoles.has('components') && moduleRoles.has('api_routes')) {
