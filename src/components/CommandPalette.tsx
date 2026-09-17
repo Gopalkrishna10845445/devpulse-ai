@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, FileCode, MessageSquare, GitBranch, ExternalLink, LayoutDashboard, X } from 'lucide-react';
+import { Search, FileCode, MessageSquare, GitBranch, ExternalLink, LayoutDashboard, Shield, X } from 'lucide-react';
 
 interface CommandItem {
   id: string;
@@ -58,6 +58,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'GitHub intelligence and analysis',
       icon: <GitBranch size={16} />,
       action: () => { onNavigate('engineering'); onClose(); },
+      group: 'Navigation',
+    },
+    {
+      id: 'security',
+      label: 'Security Intelligence',
+      description: 'Secrets, vulnerabilities, and security signals',
+      icon: <Shield size={16} />,
+      action: () => { onNavigate('security'); onClose(); },
       group: 'Navigation',
     },
     {

@@ -104,6 +104,7 @@ export interface RepositoryFileNode {
   status: FileStatus;
   skipReason: SkipReason | null;
   sha?: string;
+  content?: string;
 }
 
 export interface RepositoryDirectoryNode {
