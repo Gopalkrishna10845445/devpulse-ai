@@ -14,6 +14,7 @@ import { ExportReportModal } from '@/components/ExportReportModal';
 import { RepositoryIngestionTab } from '@/components/RepositoryIngestionTab';
 import { CodebaseIntelligenceTab } from '@/components/CodebaseIntelligenceTab';
 import { CodebaseQATab } from '@/components/CodebaseQATab';
+import { EngineeringIntelligenceTab } from '@/components/EngineeringIntelligenceTab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -121,7 +122,7 @@ export default function Home() {
             </div>
           )}
 
-          {activeSection === 'intelligence' && (
+          {(activeSection === 'codebase' || activeSection === 'intelligence') && (
             <div className="stagger-fade-up">
               <CodebaseIntelligenceTab
                 initialRepoFullName={
@@ -133,7 +134,7 @@ export default function Home() {
             </div>
           )}
 
-          {activeSection === 'rag' && (
+          {(activeSection === 'qa' || activeSection === 'rag') && (
             <div className="stagger-fade-up">
               <CodebaseQATab
                 initialRepoFullName={
@@ -141,6 +142,19 @@ export default function Home() {
                     ? `${report.github.username}/${report.github.topRepositories[0].name}`
                     : 'Gopalkrishna10845445/devpulse-ai'
                 }
+              />
+            </div>
+          )}
+
+          {activeSection === 'engineering' && (
+            <div className="stagger-fade-up">
+              <EngineeringIntelligenceTab
+                initialRepoFullName={
+                  report?.github?.topRepositories?.[0]?.name && report?.github?.username
+                    ? `${report.github.username}/${report.github.topRepositories[0].name}`
+                    : 'Gopalkrishna10845445/devpulse-ai'
+                }
+                preloadedGithub={report?.github}
               />
             </div>
           )}
@@ -200,13 +214,17 @@ export default function Home() {
           <div className="stagger-fade-up">
             <RepositoryIngestionTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
-        ) : activeSection === 'intelligence' ? (
+        ) : (activeSection === 'codebase' || activeSection === 'intelligence') ? (
           <div className="stagger-fade-up">
             <CodebaseIntelligenceTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
-        ) : activeSection === 'rag' ? (
+        ) : (activeSection === 'qa' || activeSection === 'rag') ? (
           <div className="stagger-fade-up">
             <CodebaseQATab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
+          </div>
+        ) : activeSection === 'engineering' ? (
+          <div className="stagger-fade-up">
+            <EngineeringIntelligenceTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
         ) : (
           <div className="stagger-fade-up space-y-6">
