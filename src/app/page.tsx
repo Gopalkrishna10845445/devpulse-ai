@@ -17,6 +17,7 @@ import { CodebaseQATab } from '@/components/CodebaseQATab';
 import { EngineeringIntelligenceTab } from '@/components/EngineeringIntelligenceTab';
 import { SecurityIntelligenceTab } from '@/components/SecurityIntelligenceTab';
 import { PullRequestReviewTab } from '@/components/PullRequestReviewTab';
+import { RepositoryEventsTab } from '@/components/RepositoryEventsTab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -214,6 +215,12 @@ export default function Home() {
             </div>
           )}
 
+          {activeSection === 'events' && (
+            <div className="stagger-fade-up">
+              <RepositoryEventsTab />
+            </div>
+          )}
+
           {activeSection === 'settings' && (
             <div className="stagger-fade-up space-y-6">
               <div className="p-5 rounded-md bg-surface border border-border">
@@ -255,6 +262,10 @@ export default function Home() {
         ) : activeSection === 'pullrequests' ? (
           <div className="stagger-fade-up">
             <PullRequestReviewTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
+          </div>
+        ) : activeSection === 'events' ? (
+          <div className="stagger-fade-up">
+            <RepositoryEventsTab />
           </div>
         ) : (
           <div className="stagger-fade-up space-y-6">

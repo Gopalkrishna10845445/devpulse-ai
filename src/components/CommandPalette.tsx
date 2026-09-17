@@ -77,6 +77,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       group: 'Navigation',
     },
     {
+      id: 'events',
+      label: 'Repository Events & Webhooks',
+      description: 'Real-time webhook stream and analysis jobs',
+      icon: <GitBranch size={16} />,
+      action: () => { onNavigate('events'); onClose(); },
+      group: 'Navigation',
+    },
+    {
       id: 'settings',
       label: 'Open settings',
       description: 'Configuration and profile analysis',

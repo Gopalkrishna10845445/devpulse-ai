@@ -8,6 +8,7 @@ import {
   BarChart3,
   Shield,
   GitPullRequest,
+  Zap,
   Settings,
   ChevronRight,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ export type NavSection =
   | 'engineering'
   | 'security'
   | 'pullrequests'
+  | 'events'
   | 'settings'
   // Legacy section IDs — kept for backward compat during transition
   | 'ingestion'
@@ -54,6 +56,7 @@ const navItems: NavItem[] = [
   { id: 'engineering', label: 'Engineering', icon: <BarChart3 size={16} /> },
   { id: 'security', label: 'Security', icon: <Shield size={16} /> },
   { id: 'pullrequests', label: 'Pull Requests', icon: <GitPullRequest size={16} /> },
+  { id: 'events', label: 'Events & Hooks', icon: <Zap size={16} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
 ];
 
