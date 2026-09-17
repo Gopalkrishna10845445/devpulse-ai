@@ -3,6 +3,18 @@
 import React, { useState } from 'react';
 import { CodebaseIntelligence } from '@/lib/intelligence/types';
 import { RepositoryIndex } from '@/lib/repository/types';
+import {
+  Network,
+  Cpu,
+  Layers,
+  FileCode,
+  GitMerge,
+  Search,
+  ArrowRight,
+  AlertCircle,
+  FolderTree,
+  FileText
+} from 'lucide-react';
 
 interface CodebaseIntelligenceTabProps {
   initialRepoFullName?: string;
@@ -74,47 +86,42 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
   });
 
   return (
-    <div className="w-full flex flex-col space-y-5 stagger-fade-up">
+    <div className="w-full flex flex-col space-y-6 stagger-fade-up">
       
       {/* Title & Description */}
-      <div className="pt-1 pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1 flex items-center gap-2">
-            <span className="material-symbols-outlined text-purple-400 text-[26px]">schema</span>
-            <span>Codebase Intelligence & Architecture</span>
-          </h2>
-          <p className="text-xs text-on-surface-variant">
+          <h2 className="text-heading-lg text-text-primary">Codebase Intelligence & Architecture</h2>
+          <p className="text-body-sm text-text-muted mt-1">
             Deterministic symbol extraction, import dependency graphs, module coupling, and architectural modeling.
           </p>
         </div>
 
         {intelligence && (
-          <span className="px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/15 text-purple-300 text-xs font-mono font-semibold uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-sm border border-border bg-surface-alt text-text-secondary text-caption font-mono uppercase tracking-wider self-start sm:self-auto">
             {intelligence.architecture.pattern}
           </span>
         )}
       </div>
 
       {/* Analysis Trigger Bar */}
-      <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3 shadow-sm">
+      <div className="p-4 rounded-md bg-surface border border-border space-y-3">
         <form onSubmit={handleAnalyze} className="flex flex-col sm:flex-row gap-3 items-center">
           <div className="flex-1 w-full relative">
-            <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">
-              hub
-            </span>
+            <Search size={14} className="absolute left-3 top-2.5 text-text-muted" />
             <input
               type="text"
               placeholder="e.g. Gopalkrishna10845445/devpulse-ai"
               value={repoInput}
               onChange={(e) => setRepoInput(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-surface-container-lowest border border-border-subtle text-xs text-on-surface font-mono focus:outline-none focus:border-purple-400"
+              className="w-full pl-9 pr-3 py-2 rounded-md bg-surface-alt border border-border text-body-sm text-text-primary font-mono focus:outline-none focus:border-border-strong"
             />
           </div>
 
           <button
             type="submit"
             disabled={isAnalyzing || !repoInput.trim()}
-            className="w-full sm:w-auto px-5 py-2 rounded-lg bg-purple-500 text-white font-semibold text-xs hover:bg-purple-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap shadow-sm shadow-purple-500/20"
+            className="w-full sm:w-auto px-4 py-2 rounded-md bg-text-primary text-white text-body-sm font-medium hover:bg-text-secondary transition-colors disabled:opacity-40 flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {isAnalyzing ? (
               <>
@@ -123,23 +130,23 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[16px]">account_tree</span>
-                <span>Analyze Codebase Intelligence</span>
+                <Cpu size={14} />
+                <span>Analyze Codebase</span>
               </>
             )}
           </button>
         </form>
 
         {isAnalyzing && (
-          <div className="flex items-center gap-2 text-xs text-purple-400 font-mono pt-1">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+          <div className="flex items-center gap-2 text-caption text-text-muted font-mono pt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-pulse" />
             <span>{analysisStep}</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-semantic-red/10 border border-semantic-red/30 text-xs text-red-400 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px]">error</span>
+          <div className="p-3 rounded-md bg-surface-alt border border-border text-caption text-red-600 flex items-center gap-2">
+            <AlertCircle size={14} className="flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -147,58 +154,61 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
 
       {/* Intelligence Dashboard */}
       {intelligence && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           
           {/* Top Structural Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Analyzed Files</p>
-              <p className="text-xl font-headline font-bold text-on-surface">{intelligence.architecture.metrics.totalFilesAnalyzed}</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Analyzed Files</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalFilesAnalyzed}</p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Code Symbols</p>
-              <p className="text-xl font-headline font-bold text-purple-300">{intelligence.architecture.metrics.totalSymbolsFound}</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Code Symbols</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalSymbolsFound}</p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Internal Imports</p>
-              <p className="text-xl font-headline font-bold text-cyan-400">{intelligence.architecture.metrics.totalImportsResolved}</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Internal Imports</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalImportsResolved}</p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Module Edges</p>
-              <p className="text-xl font-headline font-bold text-semantic-emerald">{intelligence.relationships.length}</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Module Edges</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.relationships.length}</p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Modularity Score</p>
-              <p className="text-xl font-headline font-bold text-semantic-emerald">{intelligence.architecture.metrics.modularityScore}/100</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Modularity</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.modularityScore}/100</p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-              <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Coupling Ratio</p>
-              <p className="text-xl font-headline font-bold text-semantic-amber">{intelligence.architecture.metrics.internalCouplingScore}%</p>
+            <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Coupling Ratio</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.internalCouplingScore}%</p>
             </div>
           </div>
 
           {/* Sub-Navigation Tabs */}
-          <div className="flex items-center gap-2 border-b border-border-subtle pb-2 overflow-x-auto no-scrollbar text-xs">
+          <div className="flex items-center gap-1 border-b border-border pb-2 overflow-x-auto no-scrollbar text-xs">
             {[
-              { id: 'architecture', label: 'Architectural Model & Layers', icon: 'view_quilt' },
-              { id: 'symbols', label: `Code Symbols (${intelligence.symbols.length})`, icon: 'code_blocks' },
-              { id: 'relationships', label: `Module Relationships (${intelligence.relationships.length})`, icon: 'mediation' },
-              { id: 'files', label: `File Intelligence (${intelligence.files.length})`, icon: 'folder_data' },
-              { id: 'dataflow', label: 'Data Flow & Entrypoints', icon: 'route' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id as any)}
-                className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 whitespace-nowrap transition-colors ${
-                  activeSubTab === tab.id
-                    ? 'bg-surface-container-low text-primary border border-border-subtle'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+              { id: 'architecture', label: 'Architectural Model', icon: Layers },
+              { id: 'symbols', label: `Symbols (${intelligence.symbols.length})`, icon: Cpu },
+              { id: 'relationships', label: `Relationships (${intelligence.relationships.length})`, icon: GitMerge },
+              { id: 'files', label: `Files (${intelligence.files.length})`, icon: FileCode },
+              { id: 'dataflow', label: 'Data Flow', icon: Network },
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSubTab(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-md text-caption font-mono transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                    activeSubTab === tab.id
+                      ? 'bg-surface-alt text-text-primary border border-border font-medium'
+                      : 'text-text-muted hover:text-text-secondary'
+                  }`}
+                >
+                  <Icon size={12} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* TAB 1: ARCHITECTURAL MODEL & LAYERS */}
@@ -206,48 +216,47 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             <div className="space-y-4">
               
               {/* Pattern Overview Card */}
-              <div className="p-5 rounded-xl bg-surface border border-purple-500/30 space-y-2">
+              <div className="p-5 rounded-md bg-surface border border-border space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-[20px]">architecture</span>
-                    <h3 className="font-headline font-bold text-base text-primary">{intelligence.architecture.pattern}</h3>
+                    <FolderTree size={16} className="text-text-secondary" />
+                    <h3 className="text-heading-sm text-text-primary">{intelligence.architecture.pattern}</h3>
                   </div>
-                  <span className="text-[11px] font-mono text-on-surface-variant">{intelligence.durationMs}ms analysis duration</span>
+                  <span className="text-caption font-mono text-text-muted">{intelligence.durationMs}ms duration</span>
                 </div>
-                <p className="text-xs text-on-surface-variant leading-relaxed">{intelligence.architecture.summary}</p>
+                <p className="text-body-sm text-text-secondary leading-relaxed">{intelligence.architecture.summary}</p>
               </div>
 
               {/* Architectural Layers Stack */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-primary">layers</span>
-                  <span>Structural Tiers & Layer Decomposition</span>
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  Structural Tiers & Layer Decomposition
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {intelligence.architecture.layers.map((layer, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-surface border border-border-subtle space-y-3">
+                    <div key={idx} className="p-4 rounded-md bg-surface border border-border space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-headline font-bold text-sm text-primary">{layer.name}</span>
-                            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-cyan-300 border border-border-subtle">
+                            <span className="font-mono font-medium text-body-sm text-text-primary">{layer.name}</span>
+                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-sm bg-surface-alt text-text-muted border border-border">
                               {layer.path}
                             </span>
                           </div>
-                          <p className="font-mono text-[11px] text-on-surface-variant mt-0.5">{layer.role}</p>
+                          <p className="font-mono text-caption text-text-muted mt-0.5">{layer.role}</p>
                         </div>
-                        <span className="text-xs font-mono font-bold text-purple-300">{layer.symbolCount} symbols</span>
+                        <span className="text-caption font-mono text-text-secondary">{layer.symbolCount} symbols</span>
                       </div>
 
-                      <p className="text-xs text-on-surface-variant leading-relaxed">{layer.description}</p>
+                      <p className="text-body-sm text-text-secondary leading-relaxed">{layer.description}</p>
 
                       {layer.keySymbols.length > 0 && (
-                        <div className="pt-2 border-t border-border-subtle space-y-1">
-                          <p className="text-[10px] font-semibold text-on-surface-variant uppercase">Key Exported Symbols:</p>
+                        <div className="pt-2 border-t border-border space-y-1">
+                          <p className="text-[10px] uppercase font-mono text-text-muted">Key Exported Symbols:</p>
                           <div className="flex flex-wrap gap-1.5">
                             {layer.keySymbols.map((sym, sIdx) => (
-                              <span key={sIdx} className="px-2 py-0.5 rounded bg-surface-container-lowest text-[10px] font-mono text-on-surface border border-border-subtle">
+                              <span key={sIdx} className="px-2 py-0.5 rounded-sm bg-surface-alt text-[11px] font-mono text-text-primary border border-border">
                                 {sym}
                               </span>
                             ))}
@@ -267,14 +276,14 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             <div className="space-y-3">
               
               {/* Filter and Search Bar */}
-              <div className="p-4 rounded-xl bg-surface border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="p-3 rounded-md bg-surface border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="w-full sm:w-72 relative">
                   <input
                     type="text"
-                    placeholder="Search symbols by name or file..."
+                    placeholder="Filter symbols..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-border-subtle text-xs text-on-surface font-mono focus:outline-none focus:border-purple-400"
+                    className="w-full px-3 py-1.5 rounded-md bg-surface-alt border border-border text-body-sm text-text-primary font-mono focus:outline-none focus:border-border-strong"
                   />
                 </div>
 
@@ -283,10 +292,10 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                     <button
                       key={kind}
                       onClick={() => setSymbolFilter(kind)}
-                      className={`px-2.5 py-1 rounded-md font-mono text-[11px] transition-colors whitespace-nowrap ${
+                      className={`px-2 py-0.5 rounded-sm font-mono text-[11px] transition-colors whitespace-nowrap ${
                         symbolFilter === kind
-                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold'
-                          : 'text-on-surface-variant hover:text-on-surface'
+                          ? 'bg-surface-alt text-text-primary border border-border-strong font-medium'
+                          : 'text-text-muted hover:text-text-secondary'
                       }`}
                     >
                       {kind}
@@ -296,10 +305,10 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
               </div>
 
               {/* Symbols Table */}
-              <div className="rounded-xl bg-surface border border-border-subtle overflow-hidden">
+              <div className="rounded-md bg-surface border border-border overflow-hidden">
                 <div className="overflow-x-auto max-h-96">
                   <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-surface-container-lowest border-b border-border-subtle text-[10px] uppercase text-on-surface-variant sticky top-0">
+                    <thead className="bg-surface-alt border-b border-border text-[10px] uppercase text-text-muted sticky top-0">
                       <tr>
                         <th className="p-3">Symbol Name</th>
                         <th className="p-3">Kind</th>
@@ -308,22 +317,22 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                         <th className="p-3">Signature</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border-subtle">
+                    <tbody className="divide-y divide-border">
                       {filteredSymbols.map((sym, idx) => (
-                        <tr key={idx} className="hover:bg-white/5 transition-colors">
-                          <td className="p-3 font-semibold text-primary">{sym.name}</td>
+                        <tr key={idx} className="hover:bg-surface-alt/50 transition-colors">
+                          <td className="p-3 font-medium text-text-primary">{sym.name}</td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-surface-container-high text-cyan-300 uppercase">
+                            <span className="px-1.5 py-0.5 rounded-sm text-[10px] bg-surface-alt text-text-secondary border border-border uppercase">
                               {sym.kind}
                             </span>
                           </td>
-                          <td className="p-3 text-on-surface-variant truncate max-w-xs">{sym.filePath}</td>
+                          <td className="p-3 text-text-muted truncate max-w-xs">{sym.filePath}</td>
                           <td className="p-3">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] ${sym.isExported ? 'text-semantic-emerald bg-semantic-emerald/10' : 'text-on-surface-variant'}`}>
+                            <span className={`px-1.5 py-0.5 rounded-sm text-[10px] ${sym.isExported ? 'text-text-primary bg-surface-alt border border-border' : 'text-text-muted'}`}>
                               {sym.isExported ? 'yes' : 'no'}
                             </span>
                           </td>
-                          <td className="p-3 text-on-surface-variant truncate max-w-md">{sym.signature || '-'}</td>
+                          <td className="p-3 text-text-muted truncate max-w-md">{sym.signature || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -338,28 +347,28 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
           {activeSubTab === 'relationships' && (
             <div className="space-y-3">
               {intelligence.relationships.length === 0 ? (
-                <div className="p-8 rounded-xl bg-surface border border-border-subtle text-center text-xs text-on-surface-variant">
+                <div className="p-8 rounded-md bg-surface border border-border text-center text-body-sm text-text-muted">
                   No inter-module import relationships detected.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {intelligence.relationships.map((rel, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-surface border border-border-subtle space-y-2.5">
+                    <div key={idx} className="p-4 rounded-md bg-surface border border-border space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 font-mono text-xs font-semibold">
-                          <span className="text-cyan-400">{rel.fromModule}</span>
-                          <span className="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span>
-                          <span className="text-purple-300">{rel.toModule}</span>
+                        <div className="flex items-center gap-2 font-mono text-caption">
+                          <span className="text-text-primary font-medium">{rel.fromModule}</span>
+                          <ArrowRight size={12} className="text-text-muted" />
+                          <span className="text-text-secondary">{rel.toModule}</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded bg-surface-container-high font-mono text-[10px] text-on-surface">
+                        <span className="px-2 py-0.5 rounded-sm bg-surface-alt border border-border font-mono text-[10px] text-text-muted">
                           {rel.importCount} imports
                         </span>
                       </div>
 
-                      <div className="space-y-1 text-[11px] font-mono text-on-surface-variant border-t border-border-subtle pt-2">
-                        <p className="text-[10px] uppercase font-semibold text-on-surface-variant">Sample Linkages:</p>
+                      <div className="space-y-1 text-caption font-mono text-text-muted border-t border-border pt-2">
+                        <p className="text-[10px] uppercase font-mono text-text-muted">Sample Linkages:</p>
                         {rel.sampleImports.map((samp, sIdx) => (
-                          <p key={sIdx} className="pl-2 text-on-surface/80">• {samp}</p>
+                          <p key={sIdx} className="pl-2 text-text-secondary">• {samp}</p>
                         ))}
                       </div>
                     </div>
@@ -371,10 +380,10 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
 
           {/* TAB 4: FILE INTELLIGENCE */}
           {activeSubTab === 'files' && (
-            <div className="rounded-xl bg-surface border border-border-subtle overflow-hidden">
+            <div className="rounded-md bg-surface border border-border overflow-hidden">
               <div className="overflow-x-auto max-h-96">
                 <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-surface-container-lowest border-b border-border-subtle text-[10px] uppercase text-on-surface-variant sticky top-0">
+                  <thead className="bg-surface-alt border-b border-border text-[10px] uppercase text-text-muted sticky top-0">
                     <tr>
                       <th className="p-3">File Path</th>
                       <th className="p-3">Role</th>
@@ -384,19 +393,19 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                       <th className="p-3">Dependents</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border-subtle">
+                  <tbody className="divide-y divide-border">
                     {intelligence.files.map((file, idx) => (
-                      <tr key={idx} className="hover:bg-white/5 transition-colors">
-                        <td className="p-3 text-primary font-semibold">{file.filePath}</td>
+                      <tr key={idx} className="hover:bg-surface-alt/50 transition-colors">
+                        <td className="p-3 text-text-primary font-medium">{file.filePath}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] bg-surface-container-high text-cyan-300">
+                          <span className="px-1.5 py-0.5 rounded-sm text-[10px] bg-surface-alt border border-border text-text-secondary">
                             {file.role}
                           </span>
                         </td>
-                        <td className="p-3 text-on-surface-variant">{file.loc}</td>
-                        <td className="p-3 text-purple-300">{file.symbols.length}</td>
-                        <td className="p-3 text-on-surface-variant">{file.internalDependencies.length}</td>
-                        <td className="p-3 text-semantic-emerald">{file.dependents.length}</td>
+                        <td className="p-3 text-text-muted">{file.loc}</td>
+                        <td className="p-3 text-text-secondary">{file.symbols.length}</td>
+                        <td className="p-3 text-text-muted">{file.internalDependencies.length}</td>
+                        <td className="p-3 text-text-primary font-medium">{file.dependents.length}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -410,20 +419,19 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             <div className="space-y-4">
               
               {/* Entrypoints */}
-              <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-primary">login</span>
-                  <span>System Entrypoints & Request Handlers ({intelligence.architecture.entrypoints.length})</span>
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  System Entrypoints & Request Handlers ({intelligence.architecture.entrypoints.length})
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {intelligence.architecture.entrypoints.map((ep, idx) => (
-                    <div key={idx} className="p-3.5 rounded-lg bg-surface-container-lowest border border-border-subtle flex items-start justify-between gap-3 text-xs">
+                    <div key={idx} className="p-3 rounded-md bg-surface-alt border border-border flex items-start justify-between gap-3 text-xs">
                       <div>
-                        <p className="font-mono font-semibold text-primary">{ep.path}</p>
-                        <p className="text-on-surface-variant text-[11px] mt-0.5">{ep.description}</p>
+                        <p className="font-mono font-medium text-text-primary">{ep.path}</p>
+                        <p className="text-text-muted text-[11px] mt-0.5">{ep.description}</p>
                       </div>
-                      <span className="px-2 py-0.5 rounded bg-surface-container-high text-cyan-300 font-mono text-[10px] uppercase">
+                      <span className="px-1.5 py-0.5 rounded-sm bg-surface border border-border text-text-muted font-mono text-[10px] uppercase">
                         {ep.type}
                       </span>
                     </div>
@@ -432,21 +440,20 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
               </div>
 
               {/* Data Flow Arcs */}
-              <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-semantic-emerald">timeline</span>
-                  <span>End-to-End Architectural Data Flow</span>
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  End-to-End Architectural Data Flow
                 </h4>
 
                 <div className="space-y-2">
                   {intelligence.architecture.dataFlow.map((arc, idx) => (
-                    <div key={idx} className="p-3.5 rounded-lg bg-surface-container-lowest border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div key={idx} className="p-3 rounded-md bg-surface-alt border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 font-mono">
-                        <span className="font-bold text-primary">{arc.from}</span>
-                        <span className="material-symbols-outlined text-[14px] text-semantic-emerald">arrow_forward</span>
-                        <span className="font-bold text-cyan-400">{arc.to}</span>
+                        <span className="font-medium text-text-primary">{arc.from}</span>
+                        <ArrowRight size={12} className="text-text-muted" />
+                        <span className="text-text-secondary">{arc.to}</span>
                       </div>
-                      <p className="text-on-surface-variant text-[11px]">{arc.description}</p>
+                      <p className="text-text-muted text-[11px]">{arc.description}</p>
                     </div>
                   ))}
                 </div>

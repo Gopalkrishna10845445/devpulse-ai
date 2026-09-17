@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { BulletRewrite } from '@/lib/types';
+import { Copy, Check, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface BulletPointEnhancerTabProps {
   bulletRewrites: BulletRewrite[];
@@ -25,7 +26,6 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
     e.preventDefault();
     if (!customInput || customInput.trim().length < 10) return;
     setIsRewritingCustom(true);
-
     setRewriteError(null);
 
     try {
@@ -52,141 +52,125 @@ export const BulletPointEnhancerTab: React.FC<BulletPointEnhancerTabProps> = ({ 
   const allRewrites = [...customRewrites, ...bulletRewrites];
 
   return (
-    <div className="w-full flex flex-col space-y-4 stagger-fade-up">
+    <div className="w-full flex flex-col space-y-6 stagger-fade-up">
       
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">AI Bullet Point Optimizer</h2>
-          <p className="text-xs text-on-surface-variant">Transform Passive Bullets into High-Impact Engineering Metrics</p>
+          <h2 className="text-heading-lg text-text-primary">AI bullet point optimizer</h2>
+          <p className="text-body-sm text-text-muted mt-1">Transform passive bullets into high-impact engineering metrics</p>
         </div>
 
         {/* Focus Selector */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setSelectedFocus('metric')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              selectedFocus === 'metric' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Metric Focus
-          </button>
-          
-          <button
-            onClick={() => setSelectedFocus('star')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              selectedFocus === 'star' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            STAR Architectural
-          </button>
-
-          <button
-            onClick={() => setSelectedFocus('executive')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              selectedFocus === 'executive' ? 'bg-white/10 text-primary border border-white/20' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Executive Focus
-          </button>
+        <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+          {[
+            { id: 'metric' as const, label: 'Metric' },
+            { id: 'star' as const, label: 'STAR' },
+            { id: 'executive' as const, label: 'Executive' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setSelectedFocus(f.id)}
+              className={`px-3 py-1 rounded-sm text-caption font-medium transition-colors ${
+                selectedFocus === f.id
+                  ? 'bg-text-primary text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Live Custom Input Box */}
-      <div className="p-4 rounded-xl bg-surface border border-border-subtle">
+      {/* Custom Input */}
+      <div className="bg-surface border border-border rounded-md p-4">
         <form onSubmit={handleCustomRewriteSubmit} className="flex flex-col sm:flex-row gap-2 items-center">
           <input
             type="text"
-            placeholder="Paste source text. Rewrites require a real model in a later phase."
+            placeholder="Paste a bullet point to rewrite..."
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
-            className="flex-1 w-full px-4 py-2 rounded-lg bg-surface-container-lowest border border-border-subtle text-xs text-on-surface focus:outline-none focus:border-white/40"
+            className="flex-1 w-full px-3 py-2 rounded-md bg-surface-alt border border-border text-body-sm text-text-primary font-mono focus:outline-none focus:border-border-strong"
           />
           <button
             type="submit"
             disabled={isRewritingCustom || customInput.trim().length < 10}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold text-xs transition-colors hover:bg-white/90 disabled:opacity-50 flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto px-4 py-2 rounded-md bg-text-primary text-white font-medium text-body-sm transition-colors hover:bg-text-secondary disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-            <span>Generate Rewrites</span>
+            Rewrite
           </button>
         </form>
-        {rewriteError && <p className="text-xs text-semantic-amber mt-2">{rewriteError}</p>}
+        {rewriteError && <p className="text-caption text-semantic-amber mt-2">{rewriteError}</p>}
       </div>
 
       {allRewrites.length === 0 && !rewriteError && (
-        <p className="text-xs text-on-surface-variant">AI rewrite unavailable. Fabricated achievements are not generated.</p>
+        <p className="text-body-sm text-text-muted">AI rewrite unavailable. Fabricated achievements are not generated.</p>
       )}
 
-      {/* Rewrites Cards List */}
+      {/* Rewrites List */}
       <div className="space-y-3">
         {allRewrites.map((rewrite, idx) => {
           let chosenRewrite = rewrite.metricFocusText;
-          let focusTitle = 'Metric-Driven Focus';
+          let focusTitle = 'Metric-driven';
 
           if (selectedFocus === 'star') {
             chosenRewrite = rewrite.starArchitecturalText;
-            focusTitle = 'STAR Architectural Focus';
+            focusTitle = 'STAR architectural';
           } else if (selectedFocus === 'executive') {
             chosenRewrite = rewrite.executiveFocusText;
-            focusTitle = 'Executive Focus';
+            focusTitle = 'Executive';
           }
 
           return (
-            <div key={rewrite.id || idx} className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
+            <div key={rewrite.id || idx} className="bg-surface border border-border rounded-md p-4 space-y-3">
               
+              {/* Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-on-surface">Bullet #{idx + 1}</span>
-                  <span className="px-2 py-0.5 rounded bg-surface-container-high text-[10px] text-on-surface-variant font-mono border border-border-subtle">
+                  <span className="text-caption font-mono font-medium text-text-primary">#{idx + 1}</span>
+                  <span className="px-2 py-0.5 rounded-sm bg-surface-alt border border-border text-[10px] text-text-muted font-mono">
                     {focusTitle}
                   </span>
                 </div>
-
-                <span className="px-2.5 py-0.5 rounded-full bg-semantic-emerald/20 text-emerald-400 text-xs font-mono font-semibold border border-semantic-emerald/40 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                  +{rewrite.improvementDelta} Impact
+                <span className="flex items-center gap-1 text-caption font-mono text-semantic-green">
+                  <TrendingUp size={12} />
+                  +{rewrite.improvementDelta}
                 </span>
               </div>
 
-              {/* Detected Flaws */}
+              {/* Flaws */}
               {rewrite.detectedFlaws && rewrite.detectedFlaws.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 text-[10px]">
+                <div className="flex flex-wrap gap-1.5">
                   {rewrite.detectedFlaws.map((flaw, fIdx) => (
-                    <span key={fIdx} className="px-2 py-0.5 rounded bg-semantic-red/10 text-red-400 border border-semantic-red/30 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[12px]">warning</span>
+                    <span key={fIdx} className="px-2 py-0.5 rounded-sm bg-red-50 text-semantic-red border border-red-200 text-[10px] flex items-center gap-1">
+                      <AlertTriangle size={10} />
                       {flaw}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Before vs After Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                
-                {/* Before */}
-                <div className="p-3.5 rounded-lg bg-surface-container-lowest border border-border-subtle space-y-1">
-                  <span className="text-[10px] font-semibold text-semantic-red uppercase tracking-wider block">Before (Weak / Passive)</span>
-                  <p className="text-on-surface-variant font-mono text-[11px] leading-relaxed">{rewrite.originalText}</p>
+              {/* Before / After */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3 rounded-md bg-surface-alt border border-border space-y-1">
+                  <span className="text-[10px] font-mono text-semantic-red uppercase tracking-wider block">− Before</span>
+                  <p className="text-caption font-mono text-text-muted leading-relaxed">{rewrite.originalText}</p>
                 </div>
 
-                {/* After */}
-                <div className="p-3.5 rounded-lg bg-surface-container-high border border-border-subtle space-y-1.5 relative">
+                <div className="p-3 rounded-md bg-surface-alt border border-border space-y-1.5 relative">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-semantic-emerald uppercase tracking-wider block">After (AI Enhanced)</span>
+                    <span className="text-[10px] font-mono text-semantic-green uppercase tracking-wider block">+ After</span>
                     <button
                       onClick={() => handleCopy(chosenRewrite, rewrite.id)}
-                      className="px-2 py-0.5 rounded bg-surface border border-border-subtle text-on-surface text-[10px] font-medium transition-colors hover:border-white/30 flex items-center gap-1"
+                      className="px-2 py-0.5 rounded-sm bg-surface border border-border text-[10px] text-text-muted hover:text-text-primary transition-colors flex items-center gap-1 font-mono"
                     >
-                      <span className="material-symbols-outlined text-[12px]">
-                        {copiedId === rewrite.id ? 'check' : 'content_copy'}
-                      </span>
-                      <span>{copiedId === rewrite.id ? 'Copied' : 'Copy'}</span>
+                      {copiedId === rewrite.id ? <Check size={10} /> : <Copy size={10} />}
+                      {copiedId === rewrite.id ? 'Copied' : 'Copy'}
                     </button>
                   </div>
-                  <p className="text-on-surface font-mono text-[11px] leading-relaxed">{chosenRewrite}</p>
+                  <p className="text-caption font-mono text-text-primary leading-relaxed">{chosenRewrite}</p>
                 </div>
-
               </div>
 
             </div>

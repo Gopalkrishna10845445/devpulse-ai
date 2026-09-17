@@ -136,7 +136,7 @@ export class CodebaseRAGPipeline {
   ): Promise<QAResponse> {
     const startTime = Date.now();
     const { repositoryId, question, conversationHistory = [] } = request;
-    const commitSha = request.commitSha || repositoryIndex?.repository?.defaultBranch || 'main';
+    const commitSha = request.commitSha || repositoryIndex?.repository?.defaultBranch || this.vectorStore.findIndexedCommit(repositoryId) || 'main';
 
     // 1. Check if repository is indexed
     const indexStatus = this.vectorStore.getIndexStatus(repositoryId, commitSha);

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { NavSection } from './Sidebar';
+import { Menu, Search, Download, RefreshCw } from 'lucide-react';
 
 interface TopBarProps {
   activeSection: NavSection;
@@ -14,6 +15,24 @@ interface TopBarProps {
   isEvaluating?: boolean;
 }
 
+const sectionTitles: Record<string, string> = {
+  overview: 'Overview',
+  codebase: 'Codebase',
+  ingestion: 'Repository Ingestion',
+  intelligence: 'Codebase Intelligence',
+  qa: 'Q&A',
+  rag: 'Q&A',
+  engineering: 'Engineering',
+  github: 'GitHub Intelligence',
+  skills: 'Technology Intelligence',
+  aireview: 'AI Code Review',
+  activity: 'Text Heuristics',
+  insights: 'Investigation Q&A',
+  settings: 'Settings',
+  security: 'Security',
+  pullrequests: 'Pull Requests',
+};
+
 export const TopBar: React.FC<TopBarProps> = ({
   activeSection,
   candidateName = 'No profile',
@@ -24,85 +43,64 @@ export const TopBar: React.FC<TopBarProps> = ({
   onResetScan,
   isEvaluating = false,
 }) => {
-  const sectionTitles: Record<NavSection, string> = {
-    overview: 'Overview Dashboard',
-    ingestion: 'Repository Ingestion & Indexing',
-    intelligence: 'Codebase Intelligence & Architecture',
-    rag: 'Codebase RAG & Grounded Q&A',
-    github: 'GitHub & Repository Intelligence',
-    skills: 'Skills Convergence Matrix',
-    aireview: 'AI Code Review & Bullet Optimizer',
-    activity: 'ATS Activity & Metric Breakdown',
-    insights: 'Technical Interview Q&A',
-    settings: 'Settings & Demo Fixtures',
-  };
-
   return (
-    <header className="h-14 fixed top-0 right-0 left-0 lg:left-64 z-30 bg-[#0e0e10]/80 backdrop-blur-xl border-b border-border-subtle px-4 sm:px-6 flex items-center justify-between">
-      
-      {/* Left: Mobile Menu Toggle + Breadcrumb */}
+    <header className="h-topbar-h fixed top-0 right-0 left-0 lg:left-sidebar-w z-30 bg-surface border-b border-border px-4 sm:px-5 flex items-center justify-between">
+
+      {/* Left: Mobile menu + page title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
-          className="lg:hidden p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/[0.04] border border-border-subtle transition-all"
+          className="lg:hidden p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-alt transition-colors"
+          aria-label="Open navigation menu"
         >
-          <span className="material-symbols-outlined text-[20px]">menu</span>
+          <Menu size={18} />
         </button>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-label-mono text-on-surface-variant/70 hidden sm:inline">DevPulse</span>
-          <span className="text-on-surface-variant/40 hidden sm:inline">/</span>
-          <h1 className="font-headline font-semibold text-primary tracking-tight text-sm sm:text-base">
-            {sectionTitles[activeSection]}
+        <div className="flex items-center gap-1.5 text-body-sm">
+          <span className="font-mono text-text-muted hidden sm:inline">DevPilot</span>
+          <span className="text-text-muted hidden sm:inline">/</span>
+          <h1 className="font-semibold text-text-primary">
+            {sectionTitles[activeSection] || activeSection}
           </h1>
         </div>
       </div>
 
-      {/* Right: Candidate Profile Badge & Platform Actions */}
-      <div className="flex items-center gap-2 sm:gap-2.5">
-        
-        {/* Active Candidate Badge */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low border border-border-subtle text-xs">
-          <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          <span className="font-headline font-semibold text-primary">{candidateName}</span>
-          <span className="font-label-mono text-[10px] text-on-surface-variant/70">({targetRole})</span>
-        </div>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
 
-        {/* Search Trigger Button */}
+        {/* Command Palette Trigger */}
         <button
           onClick={onOpenSearch}
-          className="p-1.5 sm:px-3 sm:py-1 rounded-lg bg-surface hover:bg-surface-container-low border border-border-subtle text-body-sm text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5"
-          title="Search"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border text-body-sm text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
+          aria-label="Open command palette"
         >
-          <span className="material-symbols-outlined text-[16px] text-cyan-400">search</span>
-          <span className="hidden sm:inline font-label-mono text-[11px]">Search</span>
+          <Search size={14} />
+          <span className="hidden sm:inline text-caption">Search</span>
+          <kbd className="hidden md:inline-flex items-center gap-0.5 px-1 py-0.5 rounded border border-border text-[10px] font-mono text-text-muted ml-1">
+            ⌘K
+          </kbd>
         </button>
 
-        {/* Export PDF Report Button */}
+        {/* Export */}
         <button
           onClick={onExportPDF}
-          className="p-1.5 sm:px-3 sm:py-1 rounded-lg bg-surface hover:bg-surface-container-low border border-border-subtle text-body-sm text-primary transition-all flex items-center gap-1.5"
-          title="Export PDF Report"
+          className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors flex items-center gap-1.5"
+          aria-label="Export report"
         >
-          <span className="material-symbols-outlined text-[16px] text-semantic-emerald">download</span>
-          <span className="hidden sm:inline font-label-mono text-[11px]">Export PDF</span>
+          <Download size={14} />
+          <span className="hidden sm:inline text-caption">Export</span>
         </button>
 
-        {/* New Scan Trigger */}
+        {/* New Scan */}
         <button
           onClick={onResetScan}
           disabled={isEvaluating}
-          className="px-3 py-1 rounded-lg bg-primary text-background font-headline font-semibold text-xs transition-all hover:bg-white/90 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+          className="px-3 py-1.5 rounded-md bg-text-primary text-white text-body-sm font-medium hover:bg-text-secondary disabled:opacity-50 transition-colors flex items-center gap-1.5"
         >
-          <span className={`material-symbols-outlined text-[16px] ${isEvaluating ? 'animate-spin' : ''}`}>
-            sync
-          </span>
-          <span className="hidden sm:inline font-label-mono text-[11px]">New Scan</span>
+          <RefreshCw size={14} className={isEvaluating ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">New scan</span>
         </button>
-
       </div>
-
     </header>
   );
 };
-

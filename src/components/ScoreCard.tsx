@@ -18,12 +18,6 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
   recommendation,
   quadrants,
 }) => {
-  const getBadgeStyle = (rec: string) => {
-    if (rec === 'Strong') return 'bg-semantic-emerald/15 text-semantic-emerald border-semantic-emerald/30';
-    if (rec === 'Conditional') return 'bg-semantic-amber/15 text-semantic-amber border-semantic-amber/30';
-    return 'bg-surface-container border-border-subtle text-on-surface-variant';
-  };
-
   const quadrantList = [
     { label: 'Contact & Structure', score: quadrants.atsFormatting, weight: '25%' },
     { label: 'Impact & STAR Bullets', score: quadrants.impactAndStarBullets, weight: '25%' },
@@ -32,65 +26,59 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({
   ];
 
   return (
-    <div className="p-6 rounded-xl bg-surface border border-border-subtle space-y-5 shadow-sm">
-      
-      {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3.5">
-        <div>
-          <h3 className="font-headline font-semibold text-sm sm:text-base text-primary flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-cyan-400">equalizer</span>
-            <span>Engineering Score Matrix</span>
-          </h3>
-          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Resume heuristics are shown where calculated. GitHub engineering scores stay unavailable until real evidence exists.</p>
-        </div>
+    <div className="bg-surface border border-border rounded-md p-5 space-y-5">
 
-        <span className={`px-2.5 py-1 rounded border font-label-caps text-[10px] uppercase tracking-wider font-semibold ${getBadgeStyle(recommendation)}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div>
+          <h3 className="text-heading-sm text-text-primary">Engineering score matrix</h3>
+          <p className="text-caption text-text-muted mt-0.5">Resume heuristics shown where calculated. GitHub scores stay unavailable until real evidence exists.</p>
+        </div>
+        <span className="px-2 py-1 rounded-sm border border-border text-[10px] font-mono text-text-secondary uppercase tracking-wider">
           {recommendation}
         </span>
       </div>
 
-      {/* Main Score Display Grid */}
+      {/* Score + Quadrants */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-        
-        {/* Score Ring Display */}
-        <div className="md:col-span-4 flex flex-col items-center justify-center p-5 rounded-xl bg-surface-container-lowest border border-border-subtle text-center">
-          <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-surface-container">
-            <div className="w-full h-full rounded-full bg-surface flex flex-col items-center justify-center border border-border-subtle">
-              <span className="font-mono text-4xl font-bold text-primary tracking-tight">{overallScore === null ? '—' : overallScore}</span>
-              <span className="font-label-mono text-[10px] text-on-surface-variant/70 uppercase">{overallScore === null ? 'Unavailable' : '/ 100'}</span>
-            </div>
-          </div>
-          <div className="mt-3.5">
-            <div className="font-headline font-semibold text-xs text-primary">{profileName}</div>
-            <div className="font-label-mono text-[10px] text-on-surface-variant/70 mt-0.5">{targetRole}</div>
+
+        {/* Score */}
+        <div className="md:col-span-3 flex flex-col items-center justify-center p-5 rounded-md bg-surface-alt border border-border text-center">
+          <span className="font-mono text-4xl font-bold text-text-primary tracking-tight">
+            {overallScore === null ? '—' : overallScore}
+          </span>
+          <span className="text-[10px] font-mono text-text-muted uppercase mt-1">
+            {overallScore === null ? 'Unavailable' : '/ 100'}
+          </span>
+          <div className="mt-3 pt-3 border-t border-border w-full">
+            <p className="text-body-sm font-medium text-text-primary truncate">{profileName}</p>
+            <p className="text-[10px] font-mono text-text-muted mt-0.5">{targetRole}</p>
           </div>
         </div>
 
-        {/* 4 Quadrant Scores Progress Bars */}
-        <div className="md:col-span-8 space-y-3.5">
+        {/* Quadrant bars */}
+        <div className="md:col-span-9 space-y-3.5">
           {quadrantList.map((q, idx) => (
             <div key={idx} className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-on-surface font-medium flex items-center gap-2 font-body-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <div className="flex items-center justify-between text-body-sm">
+                <span className="text-text-secondary flex items-center gap-2">
                   {q.label}
-                  <span className="font-label-mono text-[10px] text-on-surface-variant/60">({q.weight})</span>
+                  <span className="text-caption font-mono text-text-muted">({q.weight})</span>
                 </span>
-                <span className="font-label-mono font-semibold text-primary">{q.score === null ? 'Unavailable' : `${q.score}/100`}</span>
+                <span className="font-mono font-medium text-text-primary">
+                  {q.score === null ? 'Unavailable' : `${q.score}/100`}
+                </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-surface-container-low border border-white/5 overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-surface-alt border border-border overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-cyan-400 transition-all duration-500"
+                  className="h-full rounded-full bg-text-primary transition-all duration-500"
                   style={{ width: `${q.score === null ? 0 : q.score}%` }}
                 />
               </div>
             </div>
           ))}
         </div>
-
       </div>
-
     </div>
   );
 };
-

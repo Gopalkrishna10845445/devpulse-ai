@@ -2,145 +2,135 @@
 
 import React from 'react';
 import { GitHubTelemetry } from '@/lib/types';
+import { ExternalLink, Star, GitFork, AlertCircle, Shield, Code, Package, Folder, Check, X } from 'lucide-react';
 
 interface GitHubAuditTabProps {
   github: GitHubTelemetry;
 }
 
-function MetricPill({ label, value, color }: { label: string; value: string; color: 'emerald' | 'amber' | 'cyan' | 'muted' }) {
-  const colorMap = {
-    emerald: 'text-emerald-400',
-    amber: 'text-semantic-amber',
-    cyan: 'text-cyan-400',
-    muted: 'text-on-surface-variant',
-  };
+function MetricPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
-      <span className="text-on-surface-variant text-[10px] uppercase font-semibold block">{label}</span>
-      <span className={`font-headline font-bold text-sm ${colorMap[color]}`}>{value}</span>
+      <span className="text-text-muted text-[10px] uppercase font-mono tracking-wider block">{label}</span>
+      <span className="font-mono font-medium text-sm text-text-primary">{value}</span>
     </div>
   );
 }
 
 export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
   return (
-    <div className="w-full flex flex-col space-y-4 stagger-fade-up">
+    <div className="w-full flex flex-col space-y-6 stagger-fade-up">
 
       {/* Title */}
-      <div className="pt-2 pb-2">
-        <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">GitHub Engineering Intelligence</h2>
-        <p className="text-xs text-on-surface-variant">
-          Real-time data from the GitHub REST API — {github.deepInspectedRepos} repos deeply analyzed.
+      <div>
+        <h2 className="text-heading-lg text-text-primary">GitHub Engineering Intelligence</h2>
+        <p className="text-body-sm text-text-muted mt-1">
+          Real-time telemetry from GitHub REST API — {github.deepInspectedRepos} repositories deeply analyzed.
           {github.rateLimited && ' ⚠ Some signals were rate-limited.'}
         </p>
       </div>
 
-      {/* Rate limit / token warning */}
+      {/* Rate limit warning */}
       {github.rateLimited && (
-        <div className="p-3 rounded-xl bg-semantic-amber/10 border border-semantic-amber/30 text-xs text-amber-300">
-          <span className="font-semibold">Rate limit reached.</span> Set <code className="font-mono bg-surface-container-high px-1 rounded">GITHUB_TOKEN</code> in <code className="font-mono">.env.local</code> to increase the limit to 5000 requests/hour. Some metrics may be incomplete.
+        <div className="p-3 rounded-md bg-surface-alt border border-border text-body-sm text-text-secondary flex items-start gap-2">
+          <AlertCircle size={14} className="text-text-muted mt-0.5 flex-shrink-0" />
+          <span>
+            <span className="font-medium text-text-primary">Rate limit reached.</span> Set <code className="font-mono bg-surface px-1 py-0.5 rounded border border-border">GITHUB_TOKEN</code> in <code className="font-mono">.env.local</code> to increase quota to 5,000 requests/hour.
+          </span>
         </div>
       )}
 
       {/* Profile Header Card */}
-      <div className="p-5 rounded-xl bg-surface border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-4">
-        
+      <div className="p-5 rounded-md bg-surface border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {github.avatarUrl ? (
             <img
               src={github.avatarUrl}
               alt={github.name || github.username}
-              className="w-14 h-14 rounded-full border border-border-subtle shadow-md"
+              className="w-12 h-12 rounded-md border border-border"
             />
           ) : (
-            <div className="w-14 h-14 rounded-full border border-border-subtle bg-surface-container-low flex items-center justify-center text-on-surface-variant text-sm">
+            <div className="w-12 h-12 rounded-md border border-border bg-surface-alt flex items-center justify-center text-text-secondary text-sm font-mono">
               {(github.name || github.username || '?').slice(0, 1).toUpperCase()}
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-headline font-semibold text-base text-on-surface">{github.name}</h3>
+              <h3 className="text-heading-sm text-text-primary">{github.name || github.username}</h3>
               <a
                 href={`https://github.com/${github.username}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-on-surface-variant hover:text-primary flex items-center gap-1"
+                className="text-body-sm font-mono text-text-muted hover:text-text-primary flex items-center gap-1 transition-colors"
               >
                 @{github.username}
-                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                <ExternalLink size={11} />
               </a>
             </div>
-            <p className="text-xs text-on-surface-variant max-w-lg mt-0.5">{github.bio}</p>
+            {github.bio && <p className="text-body-sm text-text-secondary max-w-lg mt-0.5">{github.bio}</p>}
             {github.isFallbackData && (
-              <p className="text-xs text-semantic-amber mt-1">
-                ⚠ {github.unavailableReason || 'GitHub data unavailable'}
+              <p className="text-caption text-text-muted mt-1 font-mono">
+                Note: {github.unavailableReason || 'GitHub data unavailable'}
               </p>
             )}
           </div>
         </div>
 
         {/* Stats Summary */}
-        <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-border-subtle pt-3 sm:pt-0 sm:pl-5">
+        <div className="flex items-center gap-6 border-t sm:border-t-0 sm:border-l border-border pt-3 sm:pt-0 sm:pl-6">
           <MetricPill
-            label="Commit Streak"
-            value={github.activeCommitStreakDays === null ? 'Unavailable' : `${github.activeCommitStreakDays} days`}
-            color="amber"
+            label="Streak"
+            value={github.activeCommitStreakDays === null ? 'N/A' : `${github.activeCommitStreakDays}d`}
           />
           <MetricPill
             label="Velocity"
-            value={github.recentCommitVelocity === null ? 'Unavailable' : `${github.recentCommitVelocity}/wk`}
-            color="cyan"
+            value={github.recentCommitVelocity === null ? 'N/A' : `${github.recentCommitVelocity}/wk`}
           />
           <MetricPill
-            label="30-Day Commits"
-            value={github.commitCount30Days === null ? 'Unavailable' : String(github.commitCount30Days)}
-            color="muted"
+            label="30d Commits"
+            value={github.commitCount30Days === null ? 'N/A' : String(github.commitCount30Days)}
           />
           <MetricPill
             label="Hygiene"
-            value={github.overallHygieneScore === null ? 'Unavailable' : `${github.overallHygieneScore}/100`}
-            color="emerald"
+            value={github.overallHygieneScore === null ? 'N/A' : `${github.overallHygieneScore}/100`}
           />
         </div>
       </div>
 
       {/* Profile Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-          <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Public Repos</p>
-          <p className="text-xl font-headline font-bold text-on-surface">{github.publicReposCount}</p>
+        <div className="p-4 rounded-md bg-surface border border-border">
+          <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Public Repos</p>
+          <p className="text-xl font-mono font-medium text-text-primary mt-1">{github.publicReposCount}</p>
         </div>
-        <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-          <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Total Stars</p>
-          <p className="text-xl font-headline font-bold text-semantic-amber">{github.totalStars}</p>
+        <div className="p-4 rounded-md bg-surface border border-border">
+          <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Total Stars</p>
+          <p className="text-xl font-mono font-medium text-text-primary mt-1">{github.totalStars}</p>
         </div>
-        <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-          <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Total Forks</p>
-          <p className="text-xl font-headline font-bold text-on-surface">{github.totalForks}</p>
+        <div className="p-4 rounded-md bg-surface border border-border">
+          <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Total Forks</p>
+          <p className="text-xl font-mono font-medium text-text-primary mt-1">{github.totalForks}</p>
         </div>
-        <div className="p-4 rounded-xl bg-surface border border-border-subtle">
-          <p className="text-[10px] text-on-surface-variant uppercase font-semibold">PR Merge Ratio</p>
-          <p className="text-xl font-headline font-bold text-on-surface">
+        <div className="p-4 rounded-md bg-surface border border-border">
+          <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">PR Merge Ratio</p>
+          <p className="text-xl font-mono font-medium text-text-primary mt-1">
             {github.prMergeRatio === null ? 'N/A' : `${github.prMergeRatio}%`}
           </p>
-          {github.prMergeRatio === null && (
-            <p className="text-[10px] text-on-surface-variant mt-0.5">No closed PRs or unavailable</p>
-          )}
         </div>
       </div>
 
       {/* Engineering Hygiene Breakdown */}
       {github.hygieneBreakdown && (
-        <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-4">
+        <div className="p-5 rounded-md bg-surface border border-border space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-primary">shield</span>
-              <span>Engineering Hygiene Score Breakdown</span>
+            <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary flex items-center gap-2">
+              <Shield size={14} className="text-text-muted" />
+              <span>Engineering Hygiene Breakdown</span>
             </h4>
-            <span className="font-headline font-bold text-semantic-emerald text-sm">{github.hygieneBreakdown.total}/100</span>
+            <span className="font-mono font-medium text-sm text-text-primary">{github.hygieneBreakdown.total}/100</span>
           </div>
-          <p className="text-[11px] text-on-surface-variant">
-            Deterministic score across {github.deepInspectedRepos} deeply inspected repo(s). Unavailable signals excluded from denominator.
+          <p className="text-caption text-text-muted">
+            Deterministic score across {github.deepInspectedRepos} inspected repository(s). Unavailable signals excluded from denominator.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
             {[
@@ -151,42 +141,42 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
               { label: 'License', pts: github.hygieneBreakdown.licensePoints, max: 10 },
               { label: 'Deps', pts: github.hygieneBreakdown.dependencyPoints, max: 10 },
             ].map(({ label, pts, max }) => (
-              <div key={label} className="p-3 rounded-lg bg-surface-container-lowest border border-border-subtle text-center">
-                <p className="text-[10px] text-on-surface-variant uppercase font-semibold">{label}</p>
-                <p className={`font-headline font-bold text-base ${pts > 0 ? 'text-semantic-emerald' : 'text-on-surface-variant'}`}>
-                  {pts}<span className="text-[10px] font-normal text-on-surface-variant">/{max}</span>
+              <div key={label} className="p-3 rounded-sm bg-surface-alt border border-border text-center">
+                <p className="text-[10px] text-text-muted uppercase font-mono">{label}</p>
+                <p className="font-mono font-medium text-sm text-text-primary mt-0.5">
+                  {pts}<span className="text-[10px] text-text-muted">/{max}</span>
                 </p>
               </div>
             ))}
           </div>
           {github.hygieneBreakdown.unavailableSignals.length > 0 && (
-            <p className="text-[11px] text-on-surface-variant italic">
-              Excluded (unavailable): {github.hygieneBreakdown.unavailableSignals.join(', ')}
+            <p className="text-caption text-text-muted font-mono">
+              Excluded signals: {github.hygieneBreakdown.unavailableSignals.join(', ')}
             </p>
           )}
         </div>
       )}
 
       {/* Language Distribution */}
-      <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-[16px] text-primary">code</span>
-          <span>Repository Language Distribution</span>
+      <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+        <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary flex items-center gap-2">
+          <Code size={14} className="text-text-muted" />
+          <span>Language Distribution</span>
           {github.languageBytes.length > 0 && (
-            <span className="text-on-surface-variant font-normal">(by byte weight)</span>
+            <span className="text-text-muted font-normal">(by byte weight)</span>
           )}
         </h4>
 
         {github.languages.length === 0 ? (
-          <p className="text-xs text-on-surface-variant italic">Language data unavailable.</p>
+          <p className="text-body-sm text-text-muted font-mono">Language data unavailable.</p>
         ) : (
           <>
-            <div className="w-full h-2.5 rounded-full bg-surface-container-lowest overflow-hidden flex border border-border-subtle">
+            <div className="w-full h-2 rounded-full bg-surface-alt overflow-hidden flex border border-border">
               {github.languages.map((lang, idx) => (
                 <div
                   key={idx}
                   style={{ width: `${lang.percentage}%`, backgroundColor: lang.color }}
-                  className="h-full transition-all"
+                  className="h-full"
                   title={`${lang.name}: ${lang.percentage}%`}
                 />
               ))}
@@ -195,9 +185,9 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
             <div className="flex flex-wrap gap-4 text-xs">
               {github.languages.map((lang, idx) => (
                 <div key={idx} className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lang.color }} />
-                  <span className="text-on-surface font-medium">{lang.name}</span>
-                  <span className="text-on-surface-variant text-[11px]">({lang.percentage}%)</span>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }} />
+                  <span className="text-text-primary font-medium">{lang.name}</span>
+                  <span className="text-text-muted font-mono text-[11px]">({lang.percentage}%)</span>
                 </div>
               ))}
             </div>
@@ -207,14 +197,14 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
 
       {/* Dependency Manifests */}
       {github.dependencyManifests.length > 0 && (
-        <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-primary">package_2</span>
+        <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+          <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary flex items-center gap-2">
+            <Package size={14} className="text-text-muted" />
             <span>Detected Dependency Manifests</span>
           </h4>
           <div className="flex flex-wrap gap-2">
             {github.dependencyManifests.map((manifest, idx) => (
-              <span key={idx} className="px-2 py-1 rounded-full bg-surface-container-low border border-border-subtle text-[11px] font-mono text-on-surface">
+              <span key={idx} className="px-2.5 py-1 rounded-sm bg-surface-alt border border-border text-[11px] font-mono text-text-primary">
                 {manifest}
               </span>
             ))}
@@ -222,111 +212,101 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
         </div>
       )}
 
-      {/* Inspected Public Repositories Grid */}
+      {/* Inspected Repositories */}
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-[16px] text-primary">folder_open</span>
+        <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary flex items-center gap-2">
+          <Folder size={14} className="text-text-muted" />
           <span>Inspected Repositories ({github.topRepositories.length})</span>
-          <span className="text-on-surface-variant font-normal text-[11px]">— {github.deepInspectedRepos} deep</span>
+          <span className="text-text-muted font-normal text-[11px]">— {github.deepInspectedRepos} deep</span>
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {github.topRepositories.map((repo, idx) => {
             const isDeepInspected = idx < github.deepInspectedRepos;
             return (
-              <div key={idx} className={`p-4 rounded-xl bg-surface border space-y-3 ${isDeepInspected ? 'border-primary/30' : 'border-border-subtle'}`}>
+              <div key={idx} className={`p-4 rounded-md bg-surface border space-y-3 ${isDeepInspected ? 'border-border-strong' : 'border-border'}`}>
                 
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <a
                         href={repo.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs font-semibold text-on-surface hover:text-primary transition-colors flex items-center gap-1"
+                        className="text-body-sm font-medium text-text-primary hover:underline flex items-center gap-1 font-mono"
                       >
                         {repo.name}
-                        <span className="material-symbols-outlined text-[12px] text-on-surface-variant">open_in_new</span>
+                        <ExternalLink size={11} className="text-text-muted" />
                       </a>
                       {repo.isArchived && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-container-high border border-border-subtle text-on-surface-variant">archived</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-surface-alt border border-border text-text-muted">archived</span>
                       )}
                       {repo.isFork && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-container-high border border-border-subtle text-on-surface-variant">fork</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-surface-alt border border-border text-text-muted">fork</span>
                       )}
                       {isDeepInspected && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/20 border border-primary/30 text-cyan-400">deep</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-sm bg-surface-alt border border-border-strong text-text-primary">deep</span>
                       )}
                     </div>
-                    <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{repo.description}</p>
+                    {repo.description && (
+                      <p className="text-body-sm text-text-muted mt-1 line-clamp-2">{repo.description}</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Repo Metrics Row */}
-                <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs text-on-surface-variant">
-                  <div className="flex items-center gap-3 text-[11px]">
+                <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-text-muted">
+                  <div className="flex items-center gap-3 text-[11px] font-mono">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px] text-semantic-amber">star</span>
+                      <Star size={11} className="text-text-muted" />
                       {repo.stars}
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">call_split</span>
+                      <GitFork size={11} className="text-text-muted" />
                       {repo.forks}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">bug_report</span>
-                      {repo.openIssues}
-                    </span>
-                    <span className="font-mono text-on-surface">{repo.language}</span>
+                    <span className="text-text-secondary">{repo.language}</span>
                   </div>
 
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <span className={`px-1.5 py-0.5 rounded ${
-                      repo.hasCiWorkflow === true ? 'bg-semantic-emerald/10 text-emerald-400' :
-                      repo.hasCiWorkflow === false ? 'bg-surface-container-lowest text-on-surface-variant' :
-                      'bg-surface-container-lowest text-on-surface-variant/50'
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span className={`px-1.5 py-0.5 rounded-sm border ${
+                      repo.hasCiWorkflow === true ? 'bg-surface-alt border-border text-text-primary' :
+                      repo.hasCiWorkflow === false ? 'bg-surface border-border text-text-muted' :
+                      'bg-surface border-border text-text-muted'
                     }`}>
                       {repo.hasCiWorkflow === null ? 'CI?' : repo.hasCiWorkflow ? 'CI ✓' : 'No CI'}
                     </span>
-                    <span className={`px-1.5 py-0.5 rounded ${
-                      repo.hasTests === true ? 'bg-semantic-emerald/10 text-emerald-400' :
-                      repo.hasTests === false ? 'bg-surface-container-lowest text-on-surface-variant' :
-                      'bg-surface-container-lowest text-on-surface-variant/50'
+                    <span className={`px-1.5 py-0.5 rounded-sm border ${
+                      repo.hasTests === true ? 'bg-surface-alt border-border text-text-primary' :
+                      repo.hasTests === false ? 'bg-surface border-border text-text-muted' :
+                      'bg-surface border-border text-text-muted'
                     }`}>
                       {repo.hasTests === null ? 'Tests?' : repo.hasTests ? 'Tests ✓' : 'No Tests'}
                     </span>
-                    <span className={`px-1.5 py-0.5 rounded ${
-                      repo.hasReadme === true ? 'bg-semantic-emerald/10 text-emerald-400' :
-                      repo.hasReadme === false ? 'bg-surface-container-lowest text-on-surface-variant' :
-                      'bg-surface-container-lowest text-on-surface-variant/50'
+                    <span className={`px-1.5 py-0.5 rounded-sm border ${
+                      repo.hasReadme === true ? 'bg-surface-alt border-border text-text-primary' :
+                      repo.hasReadme === false ? 'bg-surface border-border text-text-muted' :
+                      'bg-surface border-border text-text-muted'
                     }`}>
-                      {repo.hasReadme === null ? 'Docs?' : repo.hasReadme ? 'README ✓' : 'No README'}
+                      {repo.hasReadme === null ? 'README?' : repo.hasReadme ? 'README ✓' : 'No README'}
                     </span>
                   </div>
                 </div>
 
                 {/* Deep Inspect Metrics */}
                 {isDeepInspected && (
-                  <div className="flex flex-wrap gap-3 text-[11px] text-on-surface-variant border-t border-border-subtle pt-2">
+                  <div className="flex flex-wrap gap-3 text-[11px] font-mono text-text-muted border-t border-border pt-2">
                     <span>
-                      <span className="font-semibold text-on-surface">
-                        {repo.commitCount30Days === null ? 'Unavailable' : repo.commitCount30Days}
-                      </span>
-                      {' '}commits/30d
+                      <span className="text-text-primary">{repo.commitCount30Days === null ? 'N/A' : repo.commitCount30Days}</span> commits/30d
                     </span>
                     <span>
-                      PR ratio:{' '}
-                      <span className="font-semibold text-on-surface">
-                        {repo.prMergeRatio === null ? 'N/A' : `${repo.prMergeRatio}%`}
-                      </span>
+                      PR ratio: <span className="text-text-primary">{repo.prMergeRatio === null ? 'N/A' : `${repo.prMergeRatio}%`}</span>
                     </span>
                     {repo.defaultBranch && (
-                      <span className="font-mono">
-                        branch: <span className="text-on-surface">{repo.defaultBranch}</span>
-                      </span>
+                      <span>branch: <span className="text-text-primary">{repo.defaultBranch}</span></span>
                     )}
                     {repo.size > 0 && (
-                      <span>size: <span className="text-on-surface">{repo.size < 1024 ? `${repo.size} KB` : `${(repo.size / 1024).toFixed(1)} MB`}</span></span>
+                      <span>size: <span className="text-text-primary">{repo.size < 1024 ? `${repo.size} KB` : `${(repo.size / 1024).toFixed(1)} MB`}</span></span>
                     )}
                   </div>
                 )}
@@ -339,10 +319,10 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
 
       {/* Non-fatal errors */}
       {github.errors.length > 0 && (
-        <div className="p-4 rounded-xl bg-surface border border-border-subtle text-xs text-on-surface-variant space-y-1">
-          <p className="font-semibold text-on-surface">Non-fatal GitHub API notes:</p>
+        <div className="p-4 rounded-md bg-surface-alt border border-border text-body-sm text-text-muted space-y-1">
+          <p className="font-mono text-caption uppercase tracking-wider text-text-secondary">GitHub API notes:</p>
           {github.errors.map((e, idx) => (
-            <p key={idx} className="pl-2">• {e}</p>
+            <p key={idx} className="font-mono text-caption">• {e}</p>
           ))}
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { InvestigationQuestion } from '@/lib/types';
+import { ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 
 interface InvestigationTabProps {
   questions: InvestigationQuestion[];
@@ -15,58 +16,53 @@ export const InvestigationTab: React.FC<InvestigationTabProps> = ({ questions })
   };
 
   return (
-    <div className="w-full flex flex-col space-y-4 stagger-fade-up">
+    <div className="w-full flex flex-col space-y-6 stagger-fade-up">
       
-      {/* Title */}
-      <div className="flex items-center justify-between pt-2 pb-2">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-headline text-2xl font-semibold text-on-surface mb-1">Repository Investigation Q&A</h2>
-          <p className="text-xs text-on-surface-variant">Targeted questions derived from GitHub signal gaps and resume claims</p>
+          <h2 className="text-heading-lg text-text-primary">Investigation Q&A</h2>
+          <p className="text-body-sm text-text-muted mt-1">Targeted questions derived from GitHub signal gaps and resume claims</p>
         </div>
-
-        <span className="px-3 py-1 rounded-full bg-surface border border-border-subtle text-xs font-mono text-on-surface">
-          {questions.length} Questions
+        <span className="px-3 py-1 rounded-md bg-surface border border-border text-caption font-mono text-text-muted">
+          {questions.length} questions
         </span>
       </div>
 
-      {/* Accordion List */}
-      <div className="space-y-3">
+      {/* Accordion */}
+      <div className="space-y-2">
         {questions.map((q, idx) => {
           const isExpanded = expandedIndex === idx;
           return (
-            <div key={idx} className="rounded-xl bg-surface border border-border-subtle overflow-hidden">
+            <div key={idx} className="bg-surface border border-border rounded-md overflow-hidden">
               
-              {/* Question Header */}
               <div
                 onClick={() => toggleExpand(idx)}
-                className="p-4 cursor-pointer flex items-start justify-between gap-4 hover:bg-white/5 transition-colors"
+                className="p-4 cursor-pointer flex items-start justify-between gap-4 hover:bg-surface-alt transition-colors"
               >
                 <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-on-surface">Q{idx + 1}.</span>
-                    <span className="px-2 py-0.5 rounded bg-surface-container-high text-[10px] font-mono text-on-surface border border-border-subtle">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-caption font-mono font-medium text-text-primary">Q{idx + 1}</span>
+                    <span className="px-2 py-0.5 rounded-sm bg-surface-alt border border-border text-[10px] font-mono text-text-muted">
                       {q.category}
                     </span>
-                    <span className="text-[10px] text-on-surface-variant font-mono">Target: {q.targetSkillOrClaim}</span>
+                    <span className="text-[10px] text-text-muted font-mono">Target: {q.targetSkillOrClaim}</span>
                   </div>
-                  <h5 className="text-xs font-semibold text-on-surface leading-relaxed">{q.question}</h5>
+                  <h5 className="text-body-sm font-medium text-text-primary leading-relaxed">{q.question}</h5>
                 </div>
 
-                <div className="pt-1 text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[18px]">
-                    {isExpanded ? 'expand_less' : 'expand_more'}
-                  </span>
+                <div className="pt-1 text-text-muted flex-shrink-0">
+                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </div>
               </div>
 
-              {/* Answer Key Drawer */}
               {isExpanded && (
-                <div className="p-4 bg-surface-container-lowest border-t border-border-subtle space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-semantic-emerald font-semibold">
-                    <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                    <span>Suggested Evaluation Criteria & Strong Answer Key</span>
+                <div className="p-4 bg-surface-alt border-t border-border space-y-1 text-caption">
+                  <div className="flex items-center gap-1.5 text-semantic-green font-medium">
+                    <CheckCircle size={14} />
+                    <span>Suggested evaluation criteria & strong answer key</span>
                   </div>
-                  <p className="text-on-surface-variant leading-relaxed font-mono text-[11px] pl-5">
+                  <p className="text-text-muted leading-relaxed font-mono text-[11px] pl-5">
                     {q.suggestedAnswerKey}
                   </p>
                 </div>

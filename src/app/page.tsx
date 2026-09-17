@@ -90,12 +90,12 @@ export default function Home() {
       isEvaluating={isEvaluating}
     >
       {isEvaluating ? (
-        <div className="w-full my-16 p-12 rounded-xl bg-[#131315] border border-white/10 text-center space-y-4 shadow-2xl">
-          <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          <h3 className="font-headline font-semibold text-base text-white tracking-tight">
+        <div className="w-full my-12 p-8 rounded-md bg-surface border border-border text-center space-y-4">
+          <div className="w-6 h-6 border-2 border-text-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <h3 className="text-heading-sm text-text-primary">
             Fetching live GitHub signals...
           </h3>
-          <p className="text-xs text-[#8e9192] max-w-md mx-auto">
+          <p className="text-body-sm text-text-muted max-w-md mx-auto">
             Running resume heuristics and requesting real GitHub data. This may take 5–15 seconds depending on repository count. No invented metrics are used.
           </p>
         </div>
@@ -152,7 +152,7 @@ export default function Home() {
           )}
 
           {activeSection === 'skills' && (
-            <div className="stagger-fade-up p-5 rounded-xl bg-[#131315] border border-white/10">
+            <div className="stagger-fade-up p-5 rounded-md bg-surface border border-border">
               <TechnologyIntelligenceTab
                 skillMatrix={report.skillMatrix}
                 profileName={report.profileName}
@@ -180,9 +180,9 @@ export default function Home() {
 
           {activeSection === 'settings' && (
             <div className="stagger-fade-up space-y-6">
-              <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
-                <h2 className="font-headline text-lg font-semibold text-white mb-1">Analyze Profile</h2>
-                <p className="text-xs text-[#8e9192] mb-4">
+              <div className="p-5 rounded-md bg-surface border border-border">
+                <h2 className="text-heading-md text-text-primary mb-1">Analyze Profile</h2>
+                <p className="text-body-sm text-text-muted mb-4">
                   Paste resume text and an optional GitHub username. Demo fixtures are labeled and are not live telemetry.
                 </p>
                 <InputSection
@@ -210,13 +210,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="stagger-fade-up space-y-6">
-            <div className="p-5 rounded-xl bg-[#131315] border border-white/10">
-              <h2 className="font-headline text-lg font-semibold text-white mb-1">No profile loaded</h2>
-              <p className="text-xs text-[#8e9192] mb-4">
+            <div className="p-5 rounded-md bg-surface border border-border">
+              <h2 className="text-heading-md text-text-primary mb-1">No profile loaded</h2>
+              <p className="text-body-sm text-text-muted mb-4">
                 Engineering data unavailable until you provide resume text and an optional GitHub username, or explicitly load a demo fixture.
               </p>
               {evaluationError && (
-                <p className="text-xs text-red-400 mb-4">{evaluationError}</p>
+                <p className="text-caption text-red-600 mb-4">{evaluationError}</p>
               )}
               <InputSection
                 onAnalyze={handleCustomAnalyze}

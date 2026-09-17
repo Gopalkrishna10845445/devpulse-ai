@@ -1,391 +1,266 @@
-/**
- * Phase 4 — Codebase RAG & Grounded Q&A Interactive Tab
- *
- * Provides repository-scoped natural-language question answering with
- * strict evidence citations, symbol navigation, and follow-up conversation threads.
- */
-
 'use client';
 
-import React, { useState } from 'react';
-import { ValidatedCitation } from '@/lib/rag/types';
+import React, { useState, useRef } from 'react';
+import { Send, User, Bot, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Message {
-  id: string;
   role: 'user' | 'assistant';
   content: string;
-  citations?: ValidatedCitation[];
-  retrievedChunks?: {
-    filePath: string;
-    startLine: number;
-    endLine: number;
-    symbolName?: string;
-    score: number;
-    matchReason?: string;
-  }[];
-  confidence?: 'high' | 'medium' | 'low' | 'insufficient_evidence';
-  latencyMs?: number;
+  citations?: CitationItem[];
+  confidence?: string | number;
+  retrievedChunks?: RetrievedChunkItem[];
+}
+
+interface CitationItem {
+  filePath?: string;
+  file?: string;
+  startLine?: number;
+  endLine?: number;
+  lineRange?: string;
+  symbol?: string;
+  snippet?: string;
+  isValid?: boolean;
+}
+
+interface RetrievedChunkItem {
+  filePath?: string;
+  file?: string;
+  startLine?: number;
+  endLine?: number;
+  symbolName?: string;
+  content?: string;
+  score?: number;
+  matchReason?: string;
 }
 
 interface CodebaseQATabProps {
   initialRepoFullName?: string;
+  repositoryUrl?: string;
+  isIndexed?: boolean;
+  onAskQuestion?: (question: string) => Promise<any>;
 }
 
-export function CodebaseQATab({
+export const CodebaseQATab: React.FC<CodebaseQATabProps> = ({
   initialRepoFullName = 'Gopalkrishna10845445/devpulse-ai',
-}: CodebaseQATabProps) {
-  const [repoFullName, setRepoFullName] = useState(initialRepoFullName);
-  const [isIndexing, setIsIndexing] = useState(false);
-  const [indexStatus, setIndexStatus] = useState<{
-    isIndexed: boolean;
-    commitSha?: string;
-    filesIndexed?: number;
-    chunksIndexed?: number;
-  }>({
-    isIndexed: false,
-  });
-
-  const [question, setQuestion] = useState('');
-  const [isAsking, setIsAsking] = useState(false);
+  repositoryUrl,
+  isIndexed = true,
+  onAskQuestion,
+}) => {
+  const effectiveRepo = initialRepoFullName || repositoryUrl || 'Gopalkrishna10845445/devpulse-ai';
+  const [repoName, setRepoName] = useState(effectiveRepo);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [expandedChunks, setExpandedChunks] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const suggestedQuestions = [
-    'How does authentication work in this repository?',
-    'Where are the API routes and endpoints defined?',
-    'What is the high-level architecture pattern?',
-    'What dependencies or external services does this project use?',
-    'How is data validated across the application?',
+  const suggestedPrompts = [
+    'What is the high-level architecture of this project?',
+    'Explain the authentication flow.',
+    'List the main API routes and their purpose.',
+    'What testing patterns are used?',
   ];
 
-  const handleIndexRepository = async () => {
-    if (!repoFullName.includes('/')) {
-      setError('Please provide a valid repository in "owner/repo" format.');
-      return;
-    }
+  const handleSubmit = async (question: string) => {
+    if (!question.trim() || isLoading) return;
 
-    setIsIndexing(true);
-    setError(null);
+    const userMessage: Message = { role: 'user', content: question };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
     try {
-      const res = await fetch('/api/repository/index', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repositoryId: repoFullName.trim() }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
+      let result;
+      if (onAskQuestion) {
+        result = await onAskQuestion(question);
+      } else {
+        const res = await fetch('/api/repository/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repositoryId: repoName,
+            question,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error('Failed to ask question');
+        }
+        result = await res.json();
       }
-
-      const data = await res.json();
-      setIndexStatus({
-        isIndexed: data.status === 'completed',
-        commitSha: data.commitSha,
-        filesIndexed: data.filesIndexed,
-        chunksIndexed: data.chunksIndexed,
-      });
-    } catch (e: any) {
-      setError(e.message || 'Failed to index repository.');
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: result?.answer || 'No answer available. The codebase may not be fully indexed.',
+        citations: result?.citations || [],
+        confidence: result?.confidence,
+        retrievedChunks: result?.retrievedChunks || [],
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'An error occurred while processing your question. Please ensure repository is indexed.' },
+      ]);
     } finally {
-      setIsIndexing(false);
+      setIsLoading(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 
-  const handleAskQuestion = async (qText?: string) => {
-    const textToAsk = qText || question;
-    if (!textToAsk || !textToAsk.trim()) return;
-
-    // Auto-index if not already indexed
-    if (!indexStatus.isIndexed) {
-      await handleIndexRepository();
-    }
-
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: textToAsk.trim(),
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    if (!qText) setQuestion('');
-    setIsAsking(true);
-    setError(null);
-
-    try {
-      const conversationHistory = messages.map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      const res = await fetch('/api/repository/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          repositoryId: repoFullName.trim(),
-          commitSha: indexStatus.commitSha,
-          question: textToAsk.trim(),
-          conversationHistory,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      const assistantMsg: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: data.answer,
-        citations: data.citations,
-        retrievedChunks: data.retrievedChunks,
-        confidence: data.confidence,
-        latencyMs: data.latencyMs,
-      };
-
-      setMessages(prev => [...prev, assistantMsg]);
-    } catch (e: any) {
-      setError(e.message || 'Failed to get answer from codebase.');
-    } finally {
-      setIsAsking(false);
-    }
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit(input);
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header & Repository Index Control */}
-      <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[22px]">psychology</span>
-              <h2 className="font-headline text-lg font-semibold text-on-surface tracking-tight">
-                Codebase RAG & Grounded Q&A
-              </h2>
-            </div>
-            <p className="text-xs text-on-surface-variant mt-1">
-              Ask natural-language questions about this repository. Answers are strictly grounded in verified source code and structural citations.
-            </p>
-          </div>
+    <div className="space-y-6 stagger-fade-up">
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg border border-border-subtle">
-              <span className="material-symbols-outlined text-[16px] text-on-surface-variant">folder_zip</span>
-              <input
-                type="text"
-                value={repoFullName}
-                onChange={e => setRepoFullName(e.target.value)}
-                placeholder="owner/repository"
-                className="bg-transparent text-xs text-on-surface font-mono outline-none w-56"
-              />
-            </div>
-
-            <button
-              onClick={handleIndexRepository}
-              disabled={isIndexing}
-              className="px-3.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-50"
-            >
-              {isIndexing ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span>Indexing...</span>
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[15px]">neurology</span>
-                  <span>{indexStatus.isIndexed ? 'Re-Index' : 'Index Codebase'}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Index Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border-subtle text-xs">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                indexStatus.isIndexed ? 'bg-semantic-emerald animate-pulse' : 'bg-amber-400'
-              }`}
-            />
-            <span className="text-on-surface-variant font-mono">
-              {indexStatus.isIndexed
-                ? `Indexed (${indexStatus.filesIndexed} files, ${indexStatus.chunksIndexed} semantic chunks)`
-                : 'Not Indexed yet — click "Index Codebase" or ask a question to auto-index.'}
-            </span>
-          </div>
-
-          {indexStatus.commitSha && (
-            <div className="flex items-center gap-2 text-on-surface-variant text-[11px] font-mono">
-              <span>Commit:</span>
-              <span className="px-1.5 py-0.5 rounded bg-surface-container-high text-cyan-300">
-                {indexStatus.commitSha.slice(0, 7)}
-              </span>
-            </div>
-          )}
-        </div>
+      {/* Header */}
+      <div>
+        <h2 className="text-heading-lg text-text-primary">Codebase Q&A</h2>
+        <p className="text-body-sm text-text-muted mt-1">Ask questions about the codebase. Answers are grounded in indexed repository content with file-level citations.</p>
       </div>
 
-      {error && (
-        <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-white font-mono text-xs">✕</button>
+      {/* Input area at top */}
+      <div className="bg-surface border border-border rounded-md p-4">
+        <form onSubmit={handleFormSubmit} className="flex items-center gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={isIndexed ? 'Ask about the codebase...' : 'Index a repository first to enable Q&A'}
+            disabled={!isIndexed || isLoading}
+            className="flex-1 bg-transparent text-body-sm text-text-primary outline-none placeholder:text-text-muted disabled:opacity-50 font-mono"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading || !isIndexed}
+            className="p-2 rounded-md bg-text-primary text-white hover:bg-text-secondary disabled:opacity-30 transition-colors"
+            aria-label="Send question"
+          >
+            <Send size={14} />
+          </button>
+        </form>
+      </div>
+
+      {/* Suggested prompts — only show when no messages */}
+      {messages.length === 0 && (
+        <div className="flex flex-wrap gap-2">
+          {suggestedPrompts.map((prompt, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleSubmit(prompt)}
+              disabled={!isIndexed || isLoading}
+              className="px-3 py-1.5 rounded-md border border-border text-body-sm text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors disabled:opacity-40"
+            >
+              {prompt}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* 2. Messages Thread */}
-      <div className="space-y-4 min-h-[300px]">
-        {messages.length === 0 ? (
-          <div className="p-8 rounded-xl bg-surface border border-border-subtle text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mx-auto text-primary">
-              <span className="material-symbols-outlined text-[28px]">chat_spark</span>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-on-surface">No queries asked yet</h3>
-              <p className="text-xs text-on-surface-variant max-w-md mx-auto mt-1">
-                Select a suggested question below or type your own question to inspect how code modules, authentication, API routes, or data flow works.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 pt-2 max-w-2xl mx-auto">
-              {suggestedQuestions.map((sq, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAskQuestion(sq)}
-                  className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high border border-border-subtle text-xs text-on-surface-variant hover:text-primary transition-all text-left"
-                >
-                  &ldquo;{sq}&rdquo;
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`p-5 rounded-xl border transition-all ${
-                msg.role === 'user'
-                  ? 'bg-surface-container-lowest border-border-subtle ml-8'
-                  : 'bg-surface border-border-subtle mr-8'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      msg.role === 'user' ? 'text-primary' : 'text-purple-400'
-                    }`}
-                  >
-                    {msg.role === 'user' ? 'person' : 'smart_toy'}
-                  </span>
-                  <span className="text-xs font-semibold text-on-surface font-headline uppercase tracking-wider">
-                    {msg.role === 'user' ? 'You' : 'DevPilot Codebase AI'}
-                  </span>
+      {/* Message thread */}
+      {messages.length > 0 && (
+        <div className="space-y-4">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+              {msg.role === 'assistant' && (
+                <div className="w-7 h-7 rounded-md bg-surface-alt border border-border flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot size={14} className="text-text-muted" />
+                </div>
+              )}
+              <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-first' : ''}`}>
+                <div className={`px-4 py-3 rounded-md text-body-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-text-primary text-white rounded-br-none'
+                    : 'bg-surface border border-border'
+                }`}>
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
                 </div>
 
-                {msg.latencyMs && (
-                  <span className="text-[11px] font-mono text-on-surface-variant">
-                    {msg.latencyMs}ms
-                  </span>
+                {/* Citations */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {msg.citations.map((cite, cIdx) => {
+                      const fileName = cite.filePath || cite.file;
+                      const range = cite.startLine ? `${cite.startLine}–${cite.endLine}` : cite.lineRange;
+                      return (
+                        <span key={cIdx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-surface-alt border border-border text-[11px] font-mono text-text-secondary">
+                          <FileText size={10} className="text-text-muted" />
+                          {fileName}{range ? `:${range}` : ''}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Confidence */}
+                {msg.confidence !== undefined && (
+                  <p className="mt-1.5 text-[10px] font-mono text-text-muted">
+                    Confidence: {typeof msg.confidence === 'number' ? `${(msg.confidence * 100).toFixed(0)}%` : msg.confidence.replace('_', ' ').toUpperCase()}
+                  </p>
+                )}
+
+                {/* Retrieved chunks drawer */}
+                {msg.retrievedChunks && msg.retrievedChunks.length > 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setExpandedChunks(expandedChunks === idx ? null : idx)}
+                      className="text-[10px] font-mono text-text-muted hover:text-text-secondary flex items-center gap-1 transition-colors"
+                    >
+                      {expandedChunks === idx ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      {msg.retrievedChunks.length} retrieved chunks
+                    </button>
+                    {expandedChunks === idx && (
+                      <div className="mt-2 space-y-2">
+                        {msg.retrievedChunks.map((chunk, chIdx) => {
+                          const chunkFile = chunk.filePath || chunk.file;
+                          const range = chunk.startLine ? `:${chunk.startLine}–${chunk.endLine}` : '';
+                          return (
+                            <div key={chIdx} className="p-3 rounded-sm bg-surface-alt border border-border">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-mono text-text-secondary">
+                                  {chunkFile}{range} {chunk.symbolName ? `(${chunk.symbolName})` : ''}
+                                </span>
+                                <span className="text-[10px] font-mono text-text-muted">
+                                  {chunk.score !== undefined ? `score: ${chunk.score.toFixed(3)}` : chunk.matchReason || ''}
+                                </span>
+                              </div>
+                              {chunk.content && (
+                                <pre className="text-[11px] font-mono text-text-secondary whitespace-pre-wrap leading-relaxed">{chunk.content}</pre>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-
-              {/* Message Content */}
-              <div className="text-xs text-on-surface leading-relaxed whitespace-pre-wrap font-sans space-y-2">
-                {msg.content}
-              </div>
-
-              {/* Citations Box (Assistant only) */}
-              {msg.citations && msg.citations.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border-subtle">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant mb-2 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[14px] text-semantic-emerald">verified</span>
-                    <span>Verified Code Citations ({msg.citations.length})</span>
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {msg.citations.map((cit, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded bg-surface-container-lowest border border-border-subtle flex items-start justify-between gap-2 text-xs"
-                      >
-                        <div>
-                          <p className="font-mono font-medium text-primary text-[11px]">{cit.filePath}</p>
-                          <p className="text-on-surface-variant text-[10px] font-mono mt-0.5">
-                            Lines {cit.startLine}–{cit.endLine}
-                          </p>
-                        </div>
-                        <span className="px-1.5 py-0.5 rounded bg-semantic-emerald/10 text-semantic-emerald font-mono text-[9px] uppercase font-semibold">
-                          Verified
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              {msg.role === 'user' && (
+                <div className="w-7 h-7 rounded-md bg-text-primary flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <User size={14} className="text-white" />
                 </div>
               )}
-
-              {/* Retrieved Chunks Drawer (Optional Inspection) */}
-              {msg.retrievedChunks && msg.retrievedChunks.length > 0 && (
-                <details className="mt-3 text-[11px] text-on-surface-variant">
-                  <summary className="cursor-pointer hover:text-on-surface py-1 select-none">
-                    View {msg.retrievedChunks.length} retrieved candidate chunks & similarity scores
-                  </summary>
-                  <div className="space-y-1.5 mt-2 pl-2 border-l border-border-subtle">
-                    {msg.retrievedChunks.map((c, idx) => (
-                      <div key={idx} className="flex items-center justify-between font-mono text-[10px] text-on-surface-variant py-0.5">
-                        <span className="text-on-surface truncate max-w-sm">{c.filePath}:{c.startLine}-{c.endLine}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-purple-300">{c.matchReason}</span>
-                          <span className="text-cyan-300">{(c.score * 100).toFixed(0)}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
             </div>
-          ))
-        )}
+          ))}
 
-        {isAsking && (
-          <div className="p-5 rounded-xl bg-surface border border-border-subtle space-y-3 mr-8 animate-pulse">
-            <div className="flex items-center gap-2 text-xs text-primary font-headline">
-              <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>Retrieving relevant files and synthesizing grounded answer...</span>
+          {isLoading && (
+            <div className="flex gap-3">
+              <div className="w-7 h-7 rounded-md bg-surface-alt border border-border flex items-center justify-center flex-shrink-0">
+                <Bot size={14} className="text-text-muted" />
+              </div>
+              <div className="px-4 py-3 bg-surface border border-border rounded-md">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 spinner" />
+                  <span className="text-body-sm text-text-muted">Analyzing codebase...</span>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* 3. Input Bar */}
-      <div className="p-3 rounded-xl bg-surface border border-border-subtle flex items-center gap-3">
-        <input
-          type="text"
-          value={question}
-          onChange={e => setQuestion(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleAskQuestion();
-            }
-          }}
-          placeholder="Ask anything about this codebase (e.g. 'How does authentication work?')..."
-          className="flex-1 bg-transparent text-xs text-on-surface outline-none placeholder:text-on-surface-variant/60"
-        />
-
-        <button
-          onClick={() => handleAskQuestion()}
-          disabled={isAsking || !question.trim()}
-          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-on-primary text-xs font-semibold transition-all flex items-center gap-1.5 disabled:opacity-50"
-        >
-          <span>Ask</span>
-          <span className="material-symbols-outlined text-[15px]">send</span>
-        </button>
-      </div>
+          <div ref={messagesEndRef} />
+        </div>
+      )}
     </div>
   );
-}
+};

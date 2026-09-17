@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Clock } from 'lucide-react';
 
 interface ActivityFeedProps {
   githubUsername?: string;
@@ -8,16 +9,16 @@ interface ActivityFeedProps {
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ githubUsername }) => {
   return (
-    <div className="p-6 rounded-xl bg-surface border border-border-subtle space-y-4 shadow-sm">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3.5">
-        <h3 className="font-headline font-semibold text-sm sm:text-base text-primary flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-on-surface-variant/70">history</span>
-          <span>Recent Activity</span>
+    <div className="bg-surface border border-border rounded-md p-5 space-y-4">
+      <div className="flex items-center justify-between border-b border-border pb-3">
+        <h3 className="text-heading-sm text-text-primary flex items-center gap-2">
+          <Clock size={16} className="text-text-muted" />
+          Recent activity
         </h3>
-        <span className="font-label-mono text-[10px] text-on-surface-variant/70 uppercase">Not live</span>
+        <span className="text-[10px] font-mono text-text-muted uppercase">Not live</span>
       </div>
 
-      <p className="text-xs text-on-surface-variant leading-relaxed">
+      <p className="text-body-sm text-text-muted leading-relaxed">
         GitHub activity unavailable
         {githubUsername ? ` for @${githubUsername}` : ''}. Commit, pull request, and review events are not fetched in this phase.
       </p>

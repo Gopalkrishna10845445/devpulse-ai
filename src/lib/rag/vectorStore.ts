@@ -80,6 +80,19 @@ export class RepositoryVectorStore {
   }
 
   /**
+   * Find any active indexed commit for a repositoryId
+   */
+  findIndexedCommit(repositoryId: string): string | null {
+    const prefix = `${repositoryId.toLowerCase().trim()}@`;
+    for (const [key, status] of Array.from(this.metadata.entries())) {
+      if (key.startsWith(prefix) && status.isIndexed && status.chunksIndexed > 0) {
+        return status.commitSha;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Search for top-K similar chunks within the strict repository + commit boundary
    */
   async similaritySearch(

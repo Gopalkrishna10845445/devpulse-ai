@@ -8,6 +8,7 @@ import { GitHubActivityChart } from './GitHubActivityChart';
 import { TechnologyIntelligenceTab } from './TechnologyIntelligenceTab';
 import { AIReviewPanel } from './AIReviewPanel';
 import { ActivityFeed } from './ActivityFeed';
+import { ArrowRight } from 'lucide-react';
 
 interface OverviewDashboardProps {
   report: FullEvaluationReport;
@@ -24,108 +25,90 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
   const totalSkillCount = report.skillMatrix.length;
 
   return (
-    <div className="space-y-6 stagger-fade-up">
+    <div className="space-y-8 stagger-fade-up">
       
-      {/* 1. Developer / Engineering Health Overview (Compact Metric Tiles) */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant/80">
-            Engineering Health Overview
+      {/* Section: Metric Tiles */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[11px] font-mono text-text-muted uppercase tracking-wider">
+            Engineering health
           </h2>
-          <span className="font-label-mono text-[10px] text-cyan-400">Telemetry Active</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           <MetricCard
-            label="Overall Score"
-            value={report.overallScore === null ? 'Unavailable' : `${report.overallScore}/100`}
-            subtext={report.overallScore === null ? 'Engineering data unavailable' : report.keyTakeaways.engineeringAssessment}
-            icon="equalizer"
-            status="cyan"
+            label="Overall score"
+            value={report.overallScore === null ? '—' : `${report.overallScore}/100`}
+            subtext={report.overallScore === null ? 'Data unavailable' : report.keyTakeaways.engineeringAssessment}
           />
           <MetricCard
-            label="Code Quality"
-            value={report.github.overallHygieneScore === null ? 'Unavailable' : `${report.github.overallHygieneScore}/100`}
+            label="Code quality"
+            value={report.github.overallHygieneScore === null ? '—' : `${report.github.overallHygieneScore}/100`}
             subtext={report.github.isFallbackData ? 'GitHub unavailable' : `${report.github.deepInspectedRepos} repos scored`}
-            icon="code_blocks"
-            status="emerald"
           />
           <MetricCard
-            label="GitHub Activity"
-            value={report.github.recentCommitVelocity === null ? 'Unavailable' : `${report.github.recentCommitVelocity}/wk`}
-            subtext={`${report.github.commitCount30Days ?? 'Unknown'} commits in 30 days`}
-            icon="commit"
-            status="purple"
-          />
-          <MetricCard
-            label="Skills Verified"
+            label="Skills verified"
             value={`${verifiedSkillCount}/${totalSkillCount}`}
             subtext="Code proof on GitHub"
-            icon="verified"
-            status="emerald"
           />
           <MetricCard
-            label="AI Review Score"
-            value={`${report.deterministic.actionVerbScore}/100`}
-            subtext="Impact & power verbs"
-            icon="auto_fix_high"
-            status="cyan"
-          />
-          <MetricCard
-            label="Commit Streak"
-            value={report.github.activeCommitStreakDays === null ? 'Unavailable' : `${report.github.activeCommitStreakDays} Days`}
-            subtext={`${report.github.totalStars} Total Stars`}
-            icon="local_fire_department"
-            status="amber"
+            label="Commit velocity"
+            value={report.github.recentCommitVelocity === null ? '—' : `${report.github.recentCommitVelocity}/wk`}
+            subtext={`${report.github.commitCount30Days ?? '—'} commits in 30 days`}
           />
         </div>
-      </div>
+      </section>
 
-      {/* 2. Engineering Score & 4-Quadrant Competency Matrix */}
-      <ScoreCard
-        overallScore={report.overallScore}
-        profileName={report.profileName}
-        targetRole={report.targetRole}
-        recommendation={report.keyTakeaways.engineeringAssessment}
-        quadrants={report.quadrants}
-      />
+      {/* Section: Score Matrix */}
+      <section>
+        <ScoreCard
+          overallScore={report.overallScore}
+          profileName={report.profileName}
+          targetRole={report.targetRole}
+          recommendation={report.keyTakeaways.engineeringAssessment}
+          quadrants={report.quadrants}
+        />
+      </section>
 
-      {/* 3. GitHub Insights & Repository Telemetry */}
-      <GitHubActivityChart github={report.github} />
+      {/* Section: GitHub Intelligence */}
+      <section>
+        <GitHubActivityChart github={report.github} />
+      </section>
 
-      {/* 4. Skills Convergence Table & Audit Trail */}
-      <div className="p-6 rounded-xl bg-surface border border-border-subtle space-y-4 shadow-sm">
-        <div className="flex items-center justify-between border-b border-border-subtle pb-3.5">
-          <div>
-            <h3 className="font-headline font-semibold text-sm sm:text-base text-primary flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-semantic-emerald">verified</span>
-              <span>Skills Convergence Matrix</span>
-            </h3>
-            <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Skills mentioned in source text vs languages on inspected GitHub repositories</p>
+      {/* Section: Skills Matrix */}
+      <section>
+        <div className="bg-surface border border-border rounded-md p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="text-heading-sm text-text-primary">Skills convergence matrix</h3>
+              <p className="text-caption text-text-muted mt-0.5">Resume claims vs. GitHub code evidence</p>
+            </div>
+            <button
+              onClick={() => onNavigateSection('skills')}
+              className="text-body-sm text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+            >
+              <span>Full matrix</span>
+              <ArrowRight size={14} />
+            </button>
           </div>
 
-          <button
-            onClick={() => onNavigateSection('skills')}
-            className="font-label-mono text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
-          >
-            <span>Full Matrix</span>
-            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-          </button>
+          <TechnologyIntelligenceTab
+            skillMatrix={report.skillMatrix}
+            profileName={report.profileName}
+          />
         </div>
+      </section>
 
-        <TechnologyIntelligenceTab
-          skillMatrix={report.skillMatrix}
-          profileName={report.profileName}
-        />
-      </div>
+      {/* Section: AI Review */}
+      <section>
+        <AIReviewPanel bulletRewrites={report.bulletRewrites} />
+      </section>
 
-      {/* 5. AI Code Review & Bullet Optimizer Panel */}
-      <AIReviewPanel bulletRewrites={report.bulletRewrites} />
-
-      {/* 6. Recent Engineering Activity Feed */}
-      <ActivityFeed githubUsername={report.github.username} />
+      {/* Section: Activity Feed */}
+      <section>
+        <ActivityFeed githubUsername={report.github.username} />
+      </section>
 
     </div>
   );
 };
-

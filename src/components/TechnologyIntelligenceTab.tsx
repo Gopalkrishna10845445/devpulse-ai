@@ -24,101 +24,55 @@ export const TechnologyIntelligenceTab: React.FC<TechnologyIntelligenceTabProps>
   const missingCount = skillMatrix.filter((s) => s.status === 'RESUME_ONLY').length;
 
   return (
-    <div className="w-full flex flex-col stagger-fade-up space-y-4">
+    <div className="w-full flex flex-col space-y-4">
       
-      {/* Title & Filter Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-1">
-        <div>
-          <h2 className="font-headline font-semibold text-lg sm:text-xl text-primary tracking-tight">Technology Intelligence</h2>
-          <p className="font-body-sm text-xs text-on-surface-variant/70 mt-0.5">Resume claims vs. GitHub code evidence for {profileName}</p>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+      {/* Filter */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {[
+          { id: 'ALL' as const, label: `All (${skillMatrix.length})` },
+          { id: 'VERIFIED' as const, label: `Verified (${verifiedCount})` },
+          { id: 'PARTIAL' as const, label: `Partial (${partialCount})` },
+          { id: 'RESUME_ONLY' as const, label: `Unverified (${missingCount})` },
+        ].map((f) => (
           <button
-            onClick={() => setFilter('ALL')}
-            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
-              filter === 'ALL'
-                ? 'bg-white/10 text-primary border border-white/20'
-                : 'text-on-surface-variant hover:text-primary'
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-3 py-1 rounded-md text-caption font-medium transition-colors whitespace-nowrap ${
+              filter === f.id
+                ? 'bg-surface-alt text-text-primary border border-border'
+                : 'text-text-muted hover:text-text-primary'
             }`}
           >
-            All ({skillMatrix.length})
+            {f.label}
           </button>
-          
-          <button
-            onClick={() => setFilter('VERIFIED')}
-            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
-              filter === 'VERIFIED'
-                ? 'bg-semantic-emerald/20 text-semantic-emerald border border-semantic-emerald/40'
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            Verified ({verifiedCount})
-          </button>
-
-          <button
-            onClick={() => setFilter('PARTIAL')}
-            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
-              filter === 'PARTIAL'
-                ? 'bg-semantic-amber/20 text-semantic-amber border border-semantic-amber/40'
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            Partial ({partialCount})
-          </button>
-
-          <button
-            onClick={() => setFilter('RESUME_ONLY')}
-            className={`px-3 py-1 rounded-full text-xs font-body-sm font-medium transition-colors whitespace-nowrap ${
-              filter === 'RESUME_ONLY'
-                ? 'bg-semantic-red/20 text-semantic-red border border-semantic-red/40'
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            Unverified ({missingCount})
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Skills Congruence Audit Table */}
-      <div className="w-full overflow-x-auto no-scrollbar rounded-xl border border-border-subtle bg-surface">
+      {/* Table */}
+      <div className="w-full overflow-x-auto no-scrollbar rounded-md border border-border bg-surface">
         <div className="min-w-[600px] w-full">
           
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-border-subtle bg-surface-container-lowest sticky top-0 z-10">
-            <div className="col-span-3 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-              Technology
-            </div>
-            <div className="col-span-4 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-              Resume Claim
-            </div>
-            <div className="col-span-3 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
-              GitHub Evidence
-            </div>
-            <div className="col-span-2 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-right">
-              Status
-            </div>
+          {/* Header */}
+          <div className="grid grid-cols-12 gap-3 px-4 py-3 border-b border-border bg-surface-alt sticky top-0 z-10">
+            <div className="col-span-3 text-[10px] font-mono text-text-muted uppercase tracking-wider">Technology</div>
+            <div className="col-span-4 text-[10px] font-mono text-text-muted uppercase tracking-wider">Resume Claim</div>
+            <div className="col-span-3 text-[10px] font-mono text-text-muted uppercase tracking-wider">GitHub Evidence</div>
+            <div className="col-span-2 text-[10px] font-mono text-text-muted uppercase tracking-wider text-right">Status</div>
           </div>
 
-          {/* Table Body */}
-          <div className="flex flex-col divide-y divide-border-subtle">
+          {/* Body */}
+          <div className="flex flex-col divide-y divide-border">
             {filtered.length === 0 ? (
-              <div className="p-8 text-center font-body-sm text-xs text-on-surface-variant">
+              <div className="p-8 text-center text-body-sm text-text-muted">
                 No skill items found matching the selected filter.
               </div>
             ) : (
               filtered.map((item, idx) => {
-                let badgeClass = 'bg-semantic-red text-primary';
-                let statusLabel = 'Unverified';
-
-                if (item.status === 'VERIFIED') {
-                  badgeClass = 'bg-semantic-emerald text-background';
-                  statusLabel = 'Verified';
-                } else if (item.status === 'PARTIAL') {
-                  badgeClass = 'bg-semantic-amber text-background';
-                  statusLabel = 'Partial';
-                }
+                const statusConfig = {
+                  VERIFIED: { color: 'text-semantic-green', dot: 'bg-semantic-green', label: 'Verified' },
+                  PARTIAL: { color: 'text-semantic-amber', dot: 'bg-semantic-amber', label: 'Partial' },
+                  RESUME_ONLY: { color: 'text-semantic-red', dot: 'bg-semantic-red', label: 'Unverified' },
+                }[item.status] || { color: 'text-text-muted', dot: 'bg-text-muted', label: item.status };
 
                 const claimQuote = `"${item.claimedLevel} proficiency in ${item.category}"`;
                 const githubProof = item.evidenceDetails || 'No public repositories found';
@@ -126,30 +80,28 @@ export const TechnologyIntelligenceTab: React.FC<TechnologyIntelligenceTabProps>
                 return (
                   <div
                     key={idx}
-                    className="grid grid-cols-12 gap-3 px-4 py-3 hover:bg-white/5 transition-colors group cursor-default items-center"
+                    className="grid grid-cols-12 gap-3 px-4 py-3 hover:bg-surface-alt transition-colors group cursor-default items-center"
                   >
-                    <div className="col-span-3 flex items-center gap-2">
-                      <span className="font-label-mono text-label-mono text-on-surface group-hover:text-primary transition-colors">
+                    <div className="col-span-3">
+                      <span className="font-mono text-caption text-text-primary group-hover:text-text-primary transition-colors">
                         {item.skill}
                       </span>
                     </div>
-
-                    <div className="col-span-4 flex items-center">
-                      <span className="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors truncate">
+                    <div className="col-span-4">
+                      <span className="text-caption text-text-muted group-hover:text-text-secondary transition-colors truncate block">
                         {claimQuote}
                       </span>
                     </div>
-
-                    <div className="col-span-3 flex items-center">
-                      <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    <div className="col-span-3">
+                      <span className="text-caption text-text-muted truncate block">
                         {githubProof}
                       </span>
                     </div>
-
-                    <div className="col-span-2 flex items-center justify-end">
-                      <div className={`px-2 py-1 rounded font-label-caps text-[10px] uppercase tracking-wider ${badgeClass}`}>
-                        {statusLabel}
-                      </div>
+                    <div className="col-span-2 flex items-center justify-end gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                      <span className={`text-[10px] font-mono ${statusConfig.color}`}>
+                        {statusConfig.label}
+                      </span>
                     </div>
                   </div>
                 );
