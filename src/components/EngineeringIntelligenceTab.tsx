@@ -31,6 +31,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { CodeFixProposal } from '@/lib/fixes/types';
+import { CodeFixProposalModal } from './CodeFixProposalModal';
 
 interface EngineeringIntelligenceTabProps {
   initialRepoFullName?: string;
@@ -55,6 +57,102 @@ export const EngineeringIntelligenceTab: React.FC<EngineeringIntelligenceTabProp
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null);
+
+  // Fix Proposal State
+  const [activeProposal, setActiveProposal] = useState<CodeFixProposal | null>(null);
+  const [isGeneratingFix, setIsGeneratingFix] = useState(false);
+  const [generatingFindingId, setGeneratingFindingId] = useState<string | null>(null);
+
+  const handleGenerateFix = async (f: EngineeringFinding) => {
+    if (!report) return;
+    const targetRef = f.evidence?.references?.find(r => r.file);
+    const targetFile = targetRef?.file || f.filePath;
+    if (!targetFile) return;
+
+    setIsGeneratingFix(true);
+    setGeneratingFindingId(f.id);
+
+    try {
+      const res = await fetch('/api/repository/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repositoryId: report.repository.fullName,
+          commitSha: report.summary.commitSha,
+          findingId: f.id,
+          category: 'engineering',
+          filePath: targetFile,
+          symbol: targetRef?.symbol,
+          lineRange: targetRef?.line?.toString() || targetRef?.lineRange,
+          findingTitle: f.title,
+          findingDescription: f.description,
+          findingRule: f.deterministicRule,
+          findingRecommendation: f.recommendation,
+          evidence: f.evidence,
+          preloadedIndex: preloadedIndex || undefined,
+          preloadedIntelligence: preloadedIntelligence || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActiveProposal(data.proposal);
+      } else {
+        alert(data.error || 'Failed to generate code fix.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error generating code fix.');
+    } finally {
+      setIsGeneratingFix(false);
+      setGeneratingFindingId(null);
+    }
+  };
+
+  const handleApproveProposal = async (proposalId: string) => {
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proposalId, action: 'approve' }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    }
+  };
+
+  const handleRejectProposal = async (proposalId: string, reason?: string) => {
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proposalId, action: 'reject', rejectionReason: reason }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    }
+  };
+
+  const handleApplyProposal = async (proposalId: string) => {
+    if (!activeProposal || !report) return;
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        proposalId,
+        repositoryId: report.repository.fullName,
+        commitSha: report.summary.commitSha,
+        expectedDiffHash: activeProposal.diffHash,
+        confirmedByUser: true,
+        preloadedIndex: preloadedIndex || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    } else {
+      throw new Error(data.error || 'Failed to apply patch.');
+    }
+  };
 
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -443,6 +541,32 @@ export const EngineeringIntelligenceTab: React.FC<EngineeringIntelligenceTabProp
                               </div>
                             )}
                           </div>
+
+                          {/* Fix Generation Action */}
+                          {finding.evidence.references.some(r => r.file) && (
+                            <div className="p-3 rounded bg-surface border border-border flex items-center justify-between gap-3">
+                              <span className="text-caption text-text-muted">
+                                AI-assisted refactoring proposal available for target symbol/file.
+                              </span>
+                              <button
+                                onClick={() => handleGenerateFix(finding)}
+                                disabled={isGeneratingFix && generatingFindingId === finding.id}
+                                className="px-3 py-1.5 rounded bg-text-primary text-white text-caption font-medium hover:bg-text-secondary disabled:opacity-50 transition-colors flex items-center gap-1.5 flex-shrink-0"
+                              >
+                                {isGeneratingFix && generatingFindingId === finding.id ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Generating Fix...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Wrench size={13} />
+                                    <span>Generate Fix</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -455,6 +579,16 @@ export const EngineeringIntelligenceTab: React.FC<EngineeringIntelligenceTabProp
         </div>
       )}
 
+      {/* Code Fix Proposal Modal */}
+      {activeProposal && (
+        <CodeFixProposalModal
+          proposal={activeProposal}
+          onClose={() => setActiveProposal(null)}
+          onApprove={handleApproveProposal}
+          onReject={handleRejectProposal}
+          onApply={handleApplyProposal}
+        />
+      )}
     </div>
   );
 };

@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import {
+  SecurityFinding,
   SecurityHealthReport,
   SecuritySeverity,
 } from '@/lib/security/types';
+import { CodeFixProposal } from '@/lib/fixes/types';
 import { RepositoryIndex } from '@/lib/repository/types';
 import { CodebaseIntelligence } from '@/lib/intelligence/types';
 import {
@@ -26,8 +28,10 @@ import {
   ShieldAlert,
   ShieldCheck,
   Terminal,
+  Wrench,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { CodeFixProposalModal } from './CodeFixProposalModal';
 import { maskSecret } from '@/lib/security/redactor';
 
 interface SecurityIntelligenceTabProps {
@@ -53,6 +57,97 @@ export const SecurityIntelligenceTab: React.FC<SecurityIntelligenceTabProps> = (
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'findings' | 'advisories' | 'files' | 'overview'>('overview');
+
+  // Fix Proposal State
+  const [activeProposal, setActiveProposal] = useState<CodeFixProposal | null>(null);
+  const [isGeneratingFix, setIsGeneratingFix] = useState(false);
+  const [generatingFindingId, setGeneratingFindingId] = useState<string | null>(null);
+
+  const handleGenerateFix = async (f: SecurityFinding) => {
+    if (!report || !f.filePath) return;
+    setIsGeneratingFix(true);
+    setGeneratingFindingId(f.id);
+
+    try {
+      const res = await fetch('/api/repository/fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repositoryId: report.repository.fullName,
+          commitSha: report.summary.commitSha,
+          findingId: f.id,
+          category: 'security',
+          filePath: f.filePath,
+          lineRange: f.lineStart?.toString(),
+          findingTitle: f.title,
+          findingDescription: f.description,
+          findingRule: f.deterministicRule,
+          findingRecommendation: f.recommendation,
+          evidence: f.evidence,
+          preloadedIndex: preloadedIndex || undefined,
+          preloadedIntelligence: preloadedIntelligence || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActiveProposal(data.proposal);
+      } else {
+        alert(data.error || 'Failed to generate code fix.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error generating code fix.');
+    } finally {
+      setIsGeneratingFix(false);
+      setGeneratingFindingId(null);
+    }
+  };
+
+  const handleApproveProposal = async (proposalId: string) => {
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proposalId, action: 'approve' }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    }
+  };
+
+  const handleRejectProposal = async (proposalId: string, reason?: string) => {
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proposalId, action: 'reject', rejectionReason: reason }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    }
+  };
+
+  const handleApplyProposal = async (proposalId: string) => {
+    if (!activeProposal || !report) return;
+    const res = await fetch('/api/repository/fix/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        proposalId,
+        repositoryId: report.repository.fullName,
+        commitSha: report.summary.commitSha,
+        expectedDiffHash: activeProposal.diffHash,
+        confirmedByUser: true,
+        preloadedIndex: preloadedIndex || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      setActiveProposal(data.proposal);
+    } else {
+      throw new Error(data.error || 'Failed to apply patch.');
+    }
+  };
 
   const handleScan = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -642,10 +737,31 @@ export const SecurityIntelligenceTab: React.FC<SecurityIntelligenceTabProps> = (
                               )}
                             </div>
 
-                            {/* Recommendation */}
-                            <div className="p-3 rounded bg-emerald-500/5 border border-emerald-500/20 text-caption text-emerald-800 dark:text-emerald-300">
-                              <span className="font-semibold">Recommendation: </span>
-                              <span>{f.recommendation}</span>
+                            {/* Recommendation & Fix Action */}
+                            <div className="p-3 rounded bg-emerald-500/5 border border-emerald-500/20 text-caption text-emerald-800 dark:text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <span className="font-semibold">Recommendation: </span>
+                                <span>{f.recommendation}</span>
+                              </div>
+                              {f.filePath && (
+                                <button
+                                  onClick={() => handleGenerateFix(f)}
+                                  disabled={isGeneratingFix && generatingFindingId === f.id}
+                                  className="px-3 py-1.5 rounded bg-text-primary text-white text-caption font-medium hover:bg-text-secondary disabled:opacity-50 transition-colors flex items-center gap-1.5 flex-shrink-0 self-start sm:self-auto"
+                                >
+                                  {isGeneratingFix && generatingFindingId === f.id ? (
+                                    <>
+                                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                      <span>Generating Fix...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Wrench size={13} />
+                                      <span>Generate Fix</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -752,6 +868,17 @@ export const SecurityIntelligenceTab: React.FC<SecurityIntelligenceTabProps> = (
             </div>
           )}
         </div>
+      )}
+
+      {/* Code Fix Proposal Review Modal */}
+      {activeProposal && (
+        <CodeFixProposalModal
+          proposal={activeProposal}
+          onClose={() => setActiveProposal(null)}
+          onApprove={handleApproveProposal}
+          onReject={handleRejectProposal}
+          onApply={handleApplyProposal}
+        />
       )}
     </div>
   );
