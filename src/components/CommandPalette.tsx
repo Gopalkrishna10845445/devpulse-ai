@@ -69,6 +69,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       group: 'Navigation',
     },
     {
+      id: 'pullrequests',
+      label: 'Pull Request Review',
+      description: 'Review PRs for architecture, security, and test impact',
+      icon: <GitBranch size={16} />,
+      action: () => { onNavigate('pullrequests'); onClose(); },
+      group: 'Navigation',
+    },
+    {
       id: 'settings',
       label: 'Open settings',
       description: 'Configuration and profile analysis',

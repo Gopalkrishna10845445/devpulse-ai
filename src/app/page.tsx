@@ -16,6 +16,7 @@ import { CodebaseIntelligenceTab } from '@/components/CodebaseIntelligenceTab';
 import { CodebaseQATab } from '@/components/CodebaseQATab';
 import { EngineeringIntelligenceTab } from '@/components/EngineeringIntelligenceTab';
 import { SecurityIntelligenceTab } from '@/components/SecurityIntelligenceTab';
+import { PullRequestReviewTab } from '@/components/PullRequestReviewTab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -201,6 +202,18 @@ export default function Home() {
             </div>
           )}
 
+          {activeSection === 'pullrequests' && (
+            <div className="stagger-fade-up">
+              <PullRequestReviewTab
+                initialRepoFullName={
+                  report?.github?.topRepositories?.[0]?.name && report?.github?.username
+                    ? `${report.github.username}/${report.github.topRepositories[0].name}`
+                    : 'Gopalkrishna10845445/devpulse-ai'
+                }
+              />
+            </div>
+          )}
+
           {activeSection === 'settings' && (
             <div className="stagger-fade-up space-y-6">
               <div className="p-5 rounded-md bg-surface border border-border">
@@ -238,6 +251,10 @@ export default function Home() {
         ) : activeSection === 'security' ? (
           <div className="stagger-fade-up">
             <SecurityIntelligenceTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
+          </div>
+        ) : activeSection === 'pullrequests' ? (
+          <div className="stagger-fade-up">
+            <PullRequestReviewTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
         ) : (
           <div className="stagger-fade-up space-y-6">

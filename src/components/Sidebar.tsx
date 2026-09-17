@@ -53,7 +53,7 @@ const navItems: NavItem[] = [
   { id: 'qa', label: 'Q&A', icon: <MessageSquare size={16} /> },
   { id: 'engineering', label: 'Engineering', icon: <BarChart3 size={16} /> },
   { id: 'security', label: 'Security', icon: <Shield size={16} /> },
-  { id: 'pullrequests', label: 'Pull Requests', icon: <GitPullRequest size={16} />, disabled: true, disabledLabel: 'Coming soon' },
+  { id: 'pullrequests', label: 'Pull Requests', icon: <GitPullRequest size={16} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
 ];
 

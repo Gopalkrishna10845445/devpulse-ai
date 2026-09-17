@@ -153,6 +153,21 @@ function parseTypeScriptSymbols(filePath: string, lines: string[]): CodeSymbol[]
       });
       continue;
     }
+
+    // 8. Class Methods / Member Functions: (public|private|protected|static)? (async)? methodName(params)
+    const methodMatch = line.match(/^(?:public\s+|private\s+|protected\s+|static\s+|override\s+)?(?:async\s+)?([A-Za-z0-9_$]+)\s*\(([^)]*)\)\s*(?::\s*[^;{]+)?\s*\{?/);
+    if (methodMatch && !['if', 'for', 'while', 'switch', 'catch', 'constructor', 'function', 'return'].includes(methodMatch[1])) {
+      const name = methodMatch[1];
+      symbols.push({
+        name,
+        kind: 'function',
+        filePath,
+        line: i + 1,
+        isExported: false,
+        signature: `${name}(${methodMatch[2]})`,
+      });
+      continue;
+    }
   }
 
   return symbols;
