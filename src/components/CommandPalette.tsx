@@ -37,6 +37,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       group: 'Navigation',
     },
     {
+      id: 'agent',
+      label: 'DevPilot Agent',
+      description: 'Autonomous ReAct developer agent & fixes',
+      icon: <FileCode size={16} />,
+      action: () => { onNavigate('agent'); onClose(); },
+      group: 'Navigation',
+    },
+    {
       id: 'codebase',
       label: 'Explore codebase',
       description: 'Architecture, symbols, and files',

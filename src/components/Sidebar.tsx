@@ -12,6 +12,7 @@ import {
   Bot,
   Settings,
   ChevronRight,
+  GitBranch,
 } from 'lucide-react';
 
 export type NavSection =
@@ -24,7 +25,6 @@ export type NavSection =
   | 'pullrequests'
   | 'events'
   | 'settings'
-  // Legacy section IDs — kept for backward compat during transition
   | 'ingestion'
   | 'intelligence'
   | 'rag'
@@ -38,22 +38,20 @@ interface NavItem {
   id: NavSection;
   label: string;
   icon: React.ReactNode;
-  disabled?: boolean;
-  disabledLabel?: string;
+  badge?: string;
 }
 
 interface SidebarProps {
   activeSection: NavSection;
   onSelectSection: (section: NavSection) => void;
-  activePresetId?: string;
-  onSelectPreset?: (presetId: string) => void;
+  currentRepo?: string;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
 }
 
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
-  { id: 'agent', label: 'DevPilot Agent', icon: <Bot size={16} /> },
+  { id: 'agent', label: 'DevPilot Agent', icon: <Bot size={16} />, badge: 'AI' },
   { id: 'codebase', label: 'Codebase', icon: <Code2 size={16} /> },
   { id: 'qa', label: 'Q&A', icon: <MessageSquare size={16} /> },
   { id: 'engineering', label: 'Engineering', icon: <BarChart3 size={16} /> },
@@ -66,6 +64,7 @@ const navItems: NavItem[] = [
 export const Sidebar: React.FC<SidebarProps> = ({
   activeSection,
   onSelectSection,
+  currentRepo = 'Gopalkrishna10845445/devpulse-ai',
   isOpenMobile,
   onCloseMobile,
 }) => {
@@ -73,61 +72,105 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const content = (
     <div className="flex flex-col h-full bg-surface border-r border-border select-none">
-
-      {/* Brand */}
-      <div className="h-[48px] px-4 flex items-center gap-2.5 border-b border-border">
-        <div className="w-6 h-6 bg-text-primary rounded flex items-center justify-center text-white text-xs font-bold">
-          D
+      {/* Brand Header */}
+      <div className="h-[52px] px-4 flex items-center justify-between border-b border-border bg-surface">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-text-primary rounded flex items-center justify-center text-white text-xs font-bold font-mono tracking-tight shadow-sm">
+            DP
+          </div>
+          <div className="flex flex-col">
+            <span className="font-semibold text-body-sm text-text-primary leading-none tracking-tight">
+              DevPilot
+            </span>
+            <span className="text-[10px] font-mono text-text-muted tracking-wide mt-0.5">
+              Developer Intelligence
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="font-semibold text-heading-sm text-text-primary leading-none tracking-tight">DevPilot</span>
-          <span className="text-[10px] font-mono text-text-muted tracking-wide mt-0.5">Repository Intelligence</span>
-        </div>
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-surface-alt text-text-muted border border-border">
+          v1.0
+        </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto no-scrollbar" role="navigation" aria-label="Main navigation">
+      {/* Navigation Links */}
+      <nav
+        className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto no-scrollbar"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="px-2 pb-1.5 pt-0.5 text-[10px] font-mono uppercase tracking-wider text-text-muted">
+          Platform
+        </div>
         {navItems.map((item) => {
           const isActive = resolvedSection === item.id;
           return (
             <button
               key={item.id}
               onClick={() => {
-                if (!item.disabled) {
-                  onSelectSection(item.id);
-                  onCloseMobile();
-                }
+                onSelectSection(item.id);
+                onCloseMobile();
               }}
-              disabled={item.disabled}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-body-sm transition-colors ${
-                item.disabled
-                  ? 'text-text-muted cursor-not-allowed opacity-50'
-                  : isActive
-                    ? 'bg-surface-alt text-text-primary font-medium border-l-2 border-text-primary'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-alt'
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-body-sm transition-all duration-150 ${
+                isActive
+                  ? 'bg-surface-alt text-text-primary font-medium border-l-2 border-text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-alt/70'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className={isActive ? 'text-text-primary' : 'text-text-muted'}>{item.icon}</span>
+                <span className={isActive ? 'text-text-primary' : 'text-text-muted'}>
+                  {item.icon}
+                </span>
                 <span>{item.label}</span>
               </div>
-              {item.disabled && item.disabledLabel && (
-                <span className="text-[10px] font-mono text-text-muted">{item.disabledLabel}</span>
-              )}
-              {isActive && <ChevronRight size={14} className="text-text-muted" />}
+              <div className="flex items-center gap-1.5">
+                {item.badge && (
+                  <span className="text-[9px] font-mono font-medium px-1 py-0.2 rounded bg-surface border border-border text-text-muted">
+                    {item.badge}
+                  </span>
+                )}
+                {isActive && <ChevronRight size={13} className="text-text-muted" />}
+              </div>
             </button>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between text-caption text-text-muted">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-semantic-green" />
-          <span className="font-mono text-[10px]">Online</span>
+      {/* Bottom Section: Active Target Repository */}
+      <div className="p-3 border-t border-border bg-surface-alt/40 space-y-2.5">
+        <div className="p-2 rounded-md bg-surface border border-border space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted flex items-center gap-1">
+              <GitBranch size={11} className="text-text-muted" />
+              Repository
+            </span>
+            <span className="flex items-center gap-1 text-[10px] font-mono text-semantic-green">
+              <span className="w-1.5 h-1.5 rounded-full bg-semantic-green" />
+              Live
+            </span>
+          </div>
+          <p className="font-mono text-caption font-medium text-text-primary truncate" title={currentRepo}>
+            {currentRepo}
+          </p>
         </div>
-        <span className="font-mono text-[10px]">:3005</span>
+
+        {/* User Identity Area */}
+        <div className="flex items-center justify-between pt-1 px-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-surface-alt border border-border flex items-center justify-center text-text-primary font-mono text-caption font-semibold flex-shrink-0">
+              G
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-caption font-medium text-text-primary truncate leading-tight">
+                Gopal
+              </span>
+              <span className="text-[10px] font-mono text-text-muted truncate leading-tight">
+                Developer
+              </span>
+            </div>
+          </div>
+          <span className="w-1.5 h-1.5 rounded-full bg-semantic-green flex-shrink-0" title="Connected" />
+        </div>
       </div>
     </div>
   );

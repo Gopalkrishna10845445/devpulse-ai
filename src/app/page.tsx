@@ -22,18 +22,12 @@ export default function Home() {
     setCurrentRepo(repoFullName);
   };
 
-  const handleResetScan = () => {
-    setActiveSection('overview');
-  };
-
   return (
     <DashboardLayout
       activeSection={activeSection}
       onSelectSection={setActiveSection}
-      onSelectPreset={() => {}}
-      onExportPDF={() => {}}
-      onResetScan={handleResetScan}
-      isEvaluating={false}
+      currentRepo={currentRepo}
+      onSelectRepo={handleSelectRepo}
     >
       {activeSection === 'overview' && (
         <div className="stagger-fade-up">

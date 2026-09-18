@@ -2,17 +2,21 @@
 
 import React from 'react';
 import { NavSection } from './Sidebar';
-import { Menu, Search, Download, RefreshCw } from 'lucide-react';
+import {
+  Menu,
+  Search,
+  Bell,
+  GitBranch,
+  RefreshCw,
+} from 'lucide-react';
 
 interface TopBarProps {
   activeSection: NavSection;
-  candidateName?: string;
-  targetRole?: string;
+  currentRepo?: string;
   onOpenMobileMenu: () => void;
   onOpenSearch: () => void;
-  onExportPDF?: () => void;
-  onResetScan?: () => void;
-  isEvaluating?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const sectionTitles: Record<string, string> = {
@@ -37,15 +41,15 @@ const sectionTitles: Record<string, string> = {
 
 export const TopBar: React.FC<TopBarProps> = ({
   activeSection,
+  currentRepo = 'Gopalkrishna10845445/devpulse-ai',
   onOpenMobileMenu,
   onOpenSearch,
-  onExportPDF = () => {},
-  onResetScan = () => {},
-  isEvaluating = false,
+  onRefresh = () => {},
+  isRefreshing = false,
 }) => {
   return (
     <header className="h-topbar-h fixed top-0 right-0 left-0 lg:left-sidebar-w z-30 bg-surface border-b border-border px-4 sm:px-5 flex items-center justify-between">
-      {/* Left: Mobile menu + page title */}
+      {/* Left: Mobile menu trigger + Section Breadcrumb */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
@@ -64,40 +68,52 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Command Palette Trigger */}
+      {/* Center/Right: Repository Switcher + Search + Notifications + User */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Active Repo Pill */}
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-alt border border-border text-caption font-mono max-w-[240px]">
+          <span className="w-2 h-2 rounded-full bg-semantic-green flex-shrink-0" />
+          <span className="text-text-primary truncate font-medium">{currentRepo}</span>
+          <span className="text-text-muted flex-shrink-0">:main</span>
+        </div>
+
+        {/* Command Search Bar Trigger */}
         <button
           onClick={onOpenSearch}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border text-body-sm text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
-          aria-label="Open command palette"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border bg-surface text-body-sm text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
+          aria-label="Open command search"
         >
           <Search size={14} />
-          <span className="hidden sm:inline text-caption">Search</span>
-          <kbd className="hidden md:inline-flex items-center gap-0.5 px-1 py-0.5 rounded border border-border text-[10px] font-mono text-text-muted ml-1">
+          <span className="hidden sm:inline text-caption">Search code or ask a question...</span>
+          <kbd className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded border border-border text-[10px] font-mono text-text-muted">
             ⌘K
           </kbd>
         </button>
 
-        {/* Export */}
+        {/* Refresh button */}
         <button
-          onClick={onExportPDF}
-          className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors flex items-center gap-1.5"
-          aria-label="Export report"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="p-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
+          title="Refresh repository telemetry"
+          aria-label="Refresh telemetry"
         >
-          <Download size={14} />
-          <span className="hidden sm:inline text-caption">Export</span>
+          <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
 
-        {/* Refresh / Action */}
+        {/* Notifications */}
         <button
-          onClick={onResetScan}
-          disabled={isEvaluating}
-          className="px-3 py-1.5 rounded-md bg-text-primary text-white text-body-sm font-medium hover:bg-text-secondary disabled:opacity-50 transition-colors flex items-center gap-1.5"
+          className="relative p-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
+          aria-label="Notifications"
         >
-          <RefreshCw size={14} className={isEvaluating ? 'animate-spin' : ''} />
-          <span className="hidden sm:inline">Refresh</span>
+          <Bell size={14} />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-semantic-green" />
         </button>
+
+        {/* User Avatar */}
+        <div className="w-7 h-7 rounded-full bg-text-primary text-white flex items-center justify-center font-mono text-caption font-semibold">
+          G
+        </div>
       </div>
     </header>
   );

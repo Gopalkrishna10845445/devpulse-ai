@@ -9,26 +9,20 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   activeSection: NavSection;
   onSelectSection: (section: NavSection) => void;
-  activePresetId?: string;
-  onSelectPreset?: (presetId: string) => void;
-  candidateName?: string;
-  targetRole?: string;
-  onExportPDF?: () => void;
-  onResetScan?: () => void;
-  isEvaluating?: boolean;
+  currentRepo?: string;
+  onSelectRepo?: (repo: string) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   activeSection,
   onSelectSection,
-  activePresetId,
-  onSelectPreset = () => {},
-  candidateName,
-  targetRole,
-  onExportPDF = () => {},
-  onResetScan = () => {},
-  isEvaluating = false,
+  currentRepo = 'Gopalkrishna10845445/devpulse-ai',
+  onSelectRepo,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -52,8 +46,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <Sidebar
         activeSection={activeSection}
         onSelectSection={onSelectSection}
-        activePresetId={activePresetId}
-        onSelectPreset={onSelectPreset}
+        currentRepo={currentRepo}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -61,16 +54,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Top Bar */}
       <TopBar
         activeSection={activeSection}
-        candidateName={candidateName}
-        targetRole={targetRole}
+        currentRepo={currentRepo}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onOpenSearch={() => setIsCommandOpen(true)}
-        onExportPDF={onExportPDF}
-        onResetScan={onResetScan}
-        isEvaluating={isEvaluating}
+        onRefresh={onRefresh}
+        isRefreshing={isRefreshing}
       />
 
-      {/* Main Content */}
+      {/* Main Content Workspace */}
       <main className="flex-1 lg:pl-sidebar-w pt-topbar-h pb-12 min-h-screen">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
