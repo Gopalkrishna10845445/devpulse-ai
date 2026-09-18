@@ -46,7 +46,7 @@ interface SidebarProps {
   activeSection: NavSection;
   onSelectSection: (section: NavSection) => void;
   activePresetId?: string;
-  onSelectPreset: (presetId: string) => void;
+  onSelectPreset?: (presetId: string) => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
 }

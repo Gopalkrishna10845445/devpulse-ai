@@ -10,11 +10,11 @@ interface DashboardLayoutProps {
   activeSection: NavSection;
   onSelectSection: (section: NavSection) => void;
   activePresetId?: string;
-  onSelectPreset: (presetId: string) => void;
+  onSelectPreset?: (presetId: string) => void;
   candidateName?: string;
   targetRole?: string;
-  onExportPDF: () => void;
-  onResetScan: () => void;
+  onExportPDF?: () => void;
+  onResetScan?: () => void;
   isEvaluating?: boolean;
 }
 
@@ -23,11 +23,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   activeSection,
   onSelectSection,
   activePresetId,
-  onSelectPreset,
-  candidateName = 'No profile',
-  targetRole = 'Not set',
-  onExportPDF,
-  onResetScan,
+  onSelectPreset = () => {},
+  candidateName,
+  targetRole,
+  onExportPDF = () => {},
+  onResetScan = () => {},
   isEvaluating = false,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -48,7 +48,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-bg text-text-primary flex flex-col font-sans">
-
       {/* Sidebar */}
       <Sidebar
         activeSection={activeSection}

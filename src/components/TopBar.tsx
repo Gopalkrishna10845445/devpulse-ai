@@ -10,8 +10,8 @@ interface TopBarProps {
   targetRole?: string;
   onOpenMobileMenu: () => void;
   onOpenSearch: () => void;
-  onExportPDF: () => void;
-  onResetScan: () => void;
+  onExportPDF?: () => void;
+  onResetScan?: () => void;
   isEvaluating?: boolean;
 }
 
@@ -37,17 +37,14 @@ const sectionTitles: Record<string, string> = {
 
 export const TopBar: React.FC<TopBarProps> = ({
   activeSection,
-  candidateName = 'No profile',
-  targetRole = 'Not set',
   onOpenMobileMenu,
   onOpenSearch,
-  onExportPDF,
-  onResetScan,
+  onExportPDF = () => {},
+  onResetScan = () => {},
   isEvaluating = false,
 }) => {
   return (
     <header className="h-topbar-h fixed top-0 right-0 left-0 lg:left-sidebar-w z-30 bg-surface border-b border-border px-4 sm:px-5 flex items-center justify-between">
-
       {/* Left: Mobile menu + page title */}
       <div className="flex items-center gap-3">
         <button
@@ -69,7 +66,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-
         {/* Command Palette Trigger */}
         <button
           onClick={onOpenSearch}
@@ -93,14 +89,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline text-caption">Export</span>
         </button>
 
-        {/* New Scan */}
+        {/* Refresh / Action */}
         <button
           onClick={onResetScan}
           disabled={isEvaluating}
           className="px-3 py-1.5 rounded-md bg-text-primary text-white text-body-sm font-medium hover:bg-text-secondary disabled:opacity-50 transition-colors flex items-center gap-1.5"
         >
           <RefreshCw size={14} className={isEvaluating ? 'animate-spin' : ''} />
-          <span className="hidden sm:inline">New scan</span>
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
     </header>
