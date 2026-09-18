@@ -111,8 +111,13 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
 
         {/* User Avatar */}
-        <div className="w-7 h-7 rounded-full bg-text-primary text-white flex items-center justify-center font-mono text-caption font-semibold">
-          G
+        <div className="w-8 h-8 rounded-full overflow-hidden border border-border flex-shrink-0 bg-surface-alt">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
+            alt="Gopal"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
     </header>
