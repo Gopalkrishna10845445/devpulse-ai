@@ -94,6 +94,13 @@ export const AgentTab: React.FC<AgentTabProps> = ({
   const [agentResponse, setAgentResponse] = useState<AgentResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Synchronize when switching repositories
+  React.useEffect(() => {
+    setRepositoryId(initialRepoFullName);
+    setAgentResponse(null);
+    setErrorMessage(null);
+  }, [initialRepoFullName]);
+
   // Approval state
   const [approvingActionId, setApprovingActionId] = useState<string | null>(null);
   const [approvalFeedback, setApprovalFeedback] = useState<{

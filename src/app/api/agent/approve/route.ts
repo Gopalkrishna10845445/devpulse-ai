@@ -47,11 +47,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(response);
   } catch (error: any) {
-    console.error('Agent approval error:', error);
+    const traceId = `err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    console.error(`[Agent Approval Error] [${traceId}]:`, error);
     return NextResponse.json(
       {
-        error: 'DevPilot Agent approval failed.',
-        details: error?.message || String(error),
+        error: 'DevPilot Agent approval failed. Please check server logs.',
+        traceId,
       },
       { status: 500 }
     );

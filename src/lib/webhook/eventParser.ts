@@ -46,7 +46,11 @@ export function parseGitHubWebhookEvent(
     throw new WebhookParsingError('MALFORMED_JSON', 'Webhook payload is not a valid JSON object.');
   }
 
-  const effectiveDeliveryId = (deliveryId || '').trim() || `del-${Date.now()}`;
+  if (!deliveryId || !deliveryId.trim()) {
+    throw new WebhookParsingError('INVALID_EVENT', 'Missing required X-GitHub-Delivery header.');
+  }
+
+  const effectiveDeliveryId = deliveryId.trim();
   const rawEventName = (eventHeader || '').trim().toLowerCase();
 
   let eventName: WebhookEventName = 'unknown';

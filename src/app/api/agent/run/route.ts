@@ -45,11 +45,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json(response);
   } catch (error: any) {
-    console.error('Agent execution error:', error);
+    const traceId = `err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    console.error(`[Agent Execution Error] [${traceId}]:`, error);
     return NextResponse.json(
       {
-        error: 'DevPilot Agent execution failed.',
-        details: error?.message || String(error),
+        error: 'DevPilot Agent execution failed. Please check server logs.',
+        traceId,
       },
       { status: 500 }
     );

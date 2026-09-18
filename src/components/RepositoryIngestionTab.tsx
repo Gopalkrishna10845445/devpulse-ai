@@ -24,6 +24,13 @@ export const RepositoryIngestionTab: React.FC<RepositoryIngestionTabProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'modules' | 'dependencies' | 'files' | 'skipped'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
+  React.useEffect(() => {
+    setRepoInput(initialRepoFullName);
+    setIndex(null);
+    setErrorMsg(null);
+    setIngestionStep('idle');
+  }, [initialRepoFullName]);
+
   const handleIngest = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!repoInput.trim()) return;

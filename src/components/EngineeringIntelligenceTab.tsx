@@ -52,6 +52,12 @@ export const EngineeringIntelligenceTab: React.FC<EngineeringIntelligenceTabProp
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [report, setReport] = useState<EngineeringHealthReport | null>(null);
 
+  React.useEffect(() => {
+    setRepoInput(initialRepoFullName);
+    setReport(null);
+    setErrorMsg(null);
+  }, [initialRepoFullName]);
+
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');

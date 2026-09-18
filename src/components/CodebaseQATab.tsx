@@ -54,6 +54,12 @@ export const CodebaseQATab: React.FC<CodebaseQATabProps> = ({
   const [expandedChunks, setExpandedChunks] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  React.useEffect(() => {
+    setRepoName(effectiveRepo);
+    setMessages([]);
+    setInput('');
+  }, [effectiveRepo]);
+
   const suggestedPrompts = [
     'What is the high-level architecture of this project?',
     'Explain the authentication flow.',

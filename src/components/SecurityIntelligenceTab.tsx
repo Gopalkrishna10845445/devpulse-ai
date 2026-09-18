@@ -50,6 +50,12 @@ export const SecurityIntelligenceTab: React.FC<SecurityIntelligenceTabProps> = (
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [report, setReport] = useState<SecurityHealthReport | null>(null);
 
+  React.useEffect(() => {
+    setRepoInput(initialRepoFullName);
+    setReport(null);
+    setErrorMsg(null);
+  }, [initialRepoFullName]);
+
   // Filters & Search
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');

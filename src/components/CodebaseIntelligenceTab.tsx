@@ -30,6 +30,13 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
   const [analysisStep, setAnalysisStep] = useState('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [intelligence, setIntelligence] = useState<CodebaseIntelligence | null>(null);
+
+  React.useEffect(() => {
+    setRepoInput(initialRepoFullName);
+    setIntelligence(null);
+    setErrorMsg(null);
+    setAnalysisStep('idle');
+  }, [initialRepoFullName]);
   const [activeSubTab, setActiveSubTab] = useState<'architecture' | 'symbols' | 'relationships' | 'files' | 'dataflow'>('architecture');
   const [symbolFilter, setSymbolFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');

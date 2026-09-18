@@ -130,10 +130,14 @@ export class CodeFixEngine {
     }
 
     // 3. Stale commit check
-    const currentBranchOrCommit = repoIndex.repository?.defaultBranch || 'main';
-    if (proposal.commitSha !== commitSha || commitSha !== currentBranchOrCommit) {
+    if (proposal.commitSha !== commitSha) {
       proposal.status = 'stale';
       throw new Error(`Repository state changed. The proposal was generated for commit '${proposal.commitSha}', but requested commit is '${commitSha}'. Regenerate the fix.`);
+    }
+    const indexCommitSha = (repoIndex as any).commitSha;
+    if (indexCommitSha && indexCommitSha !== proposal.commitSha) {
+      proposal.status = 'stale';
+      throw new Error(`Repository state changed. The proposal was generated for commit '${proposal.commitSha}', but current repository index is at commit '${indexCommitSha}'. Regenerate the fix.`);
     }
 
     // 4. Status check

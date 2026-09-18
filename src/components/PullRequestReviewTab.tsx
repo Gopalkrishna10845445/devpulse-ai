@@ -66,6 +66,12 @@ export const PullRequestReviewTab: React.FC<PullRequestReviewTabProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [review, setReview] = useState<PullRequestReview | null>(null);
 
+  React.useEffect(() => {
+    setRepoInput(initialRepoFullName);
+    setReview(null);
+    setErrorMsg(null);
+  }, [initialRepoFullName]);
+
   // Sub-Navigation
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'findings' | 'diff'>('overview');
 
