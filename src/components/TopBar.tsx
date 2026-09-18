@@ -17,6 +17,7 @@ interface TopBarProps {
 
 const sectionTitles: Record<string, string> = {
   overview: 'Overview',
+  agent: 'DevPilot Agent',
   codebase: 'Codebase',
   ingestion: 'Repository Ingestion',
   intelligence: 'Codebase Intelligence',

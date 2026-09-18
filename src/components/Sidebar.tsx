@@ -9,12 +9,14 @@ import {
   Shield,
   GitPullRequest,
   Zap,
+  Bot,
   Settings,
   ChevronRight,
 } from 'lucide-react';
 
 export type NavSection =
   | 'overview'
+  | 'agent'
   | 'codebase'
   | 'qa'
   | 'engineering'
@@ -51,6 +53,7 @@ interface SidebarProps {
 
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
+  { id: 'agent', label: 'DevPilot Agent', icon: <Bot size={16} /> },
   { id: 'codebase', label: 'Codebase', icon: <Code2 size={16} /> },
   { id: 'qa', label: 'Q&A', icon: <MessageSquare size={16} /> },
   { id: 'engineering', label: 'Engineering', icon: <BarChart3 size={16} /> },

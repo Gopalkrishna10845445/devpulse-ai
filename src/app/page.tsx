@@ -18,6 +18,7 @@ import { EngineeringIntelligenceTab } from '@/components/EngineeringIntelligence
 import { SecurityIntelligenceTab } from '@/components/SecurityIntelligenceTab';
 import { PullRequestReviewTab } from '@/components/PullRequestReviewTab';
 import { RepositoryEventsTab } from '@/components/RepositoryEventsTab';
+import { AgentTab } from '@/components/AgentTab';
 import { FullEvaluationReport } from '@/lib/types';
 
 export default function Home() {
@@ -111,6 +112,18 @@ export default function Home() {
               onExportPDF={() => setIsExportOpen(true)}
               onNavigateSection={setActiveSection}
             />
+          )}
+
+          {activeSection === 'agent' && (
+            <div className="stagger-fade-up">
+              <AgentTab
+                initialRepoFullName={
+                  report?.github?.topRepositories?.[0]?.name && report?.github?.username
+                    ? `${report.github.username}/${report.github.topRepositories[0].name}`
+                    : 'Gopalkrishna10845445/devpulse-ai'
+                }
+              />
+            </div>
           )}
 
           {activeSection === 'ingestion' && (
@@ -239,7 +252,11 @@ export default function Home() {
           )}
         </>
       ) : (
-        activeSection === 'ingestion' ? (
+        activeSection === 'agent' ? (
+          <div className="stagger-fade-up">
+            <AgentTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
+          </div>
+        ) : activeSection === 'ingestion' ? (
           <div className="stagger-fade-up">
             <RepositoryIngestionTab initialRepoFullName="Gopalkrishna10845445/devpulse-ai" />
           </div>
