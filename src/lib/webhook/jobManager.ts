@@ -14,8 +14,10 @@ import {
 } from './types';
 import { determineRequiredOperations } from './eventParser';
 import { ingestRepository } from '../repository/repositoryIngestor';
+import { RepositoryIndex } from '../repository/types';
 import { CodebaseRAGPipeline } from '../rag/ragPipeline';
 import { analyzeCodebase } from '../intelligence/codebaseAnalyzer';
+import { CodebaseIntelligence } from '../intelligence/types';
 import { analyzeEngineeringHealth } from '../engineering/engineeringEngine';
 import { analyzeSecurityHealth } from '../security/securityEngine';
 import { PRReviewEngine } from '../pr/prReviewEngine';
@@ -141,8 +143,8 @@ class WebhookJobManagerSingleton {
     const { owner, name } = this.splitRepo(job.repositoryId);
 
     try {
-      let index: any = null;
-      let intelligence: any = null;
+      let index: RepositoryIndex | null = null;
+      let intelligence: CodebaseIntelligence | null = null;
 
       for (const op of job.requestedOperations) {
         if (op === 'INGEST') {
@@ -152,9 +154,9 @@ class WebhookJobManagerSingleton {
             branch: job.branch,
           });
         } else if (op === 'INDEX' && index) {
-          await new CodebaseRAGPipeline().indexRepository(job.repositoryId, index, intelligence);
+          await new CodebaseRAGPipeline().indexRepository(job.repositoryId, index, intelligence ?? undefined);
         } else if (op === 'CODEBASE_ANALYSIS' && index) {
-          intelligence = analyzeCodebase(index);
+          intelligence = await analyzeCodebase({ index });
         } else if (op === 'ENGINEERING_ANALYSIS' && index && intelligence) {
           await analyzeEngineeringHealth({
             repoIndex: index,
@@ -171,7 +173,7 @@ class WebhookJobManagerSingleton {
             pullRequestNumber: job.pullRequestNumber,
             headSha: job.targetSha,
             preloadedIndex: index,
-            preloadedIntelligence: intelligence,
+            preloadedIntelligence: intelligence ?? undefined,
           });
         }
       }

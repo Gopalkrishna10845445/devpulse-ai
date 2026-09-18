@@ -31,6 +31,7 @@ const sectionTitles: Record<string, string> = {
   settings: 'Settings',
   security: 'Security',
   pullrequests: 'Pull Requests',
+  events: 'Events & Hooks',
 };
 
 export const TopBar: React.FC<TopBarProps> = ({
