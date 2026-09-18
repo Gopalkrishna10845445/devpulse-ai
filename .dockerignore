@@ -1,0 +1,17 @@
+.git
+.agents
+.next
+node_modules
+npm-debug.log
+.env
+.env*.local
+*.md
+!README.md
+docs
+tests
+coverage
+.vscode
+.idea
+*.bat
+*.pdf
+generate_interview_pdf.py

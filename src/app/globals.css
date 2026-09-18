@@ -20,7 +20,7 @@
 body {
   color: var(--text-primary);
   background-color: var(--bg);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -28,12 +28,12 @@ body {
 
 /* Typography hierarchy */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   letter-spacing: -0.02em;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
 /* Subtle entry animation */

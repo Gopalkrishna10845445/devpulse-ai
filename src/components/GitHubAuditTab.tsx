@@ -44,6 +44,7 @@ export const GitHubAuditTab: React.FC<GitHubAuditTabProps> = ({ github }) => {
       <div className="p-5 rounded-md bg-surface border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {github.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={github.avatarUrl}
               alt={github.name || github.username}
