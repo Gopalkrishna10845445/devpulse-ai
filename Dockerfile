@@ -49,7 +49,7 @@ COPY --from=builder /app/package.json ./package.json
 
 # Expose healthcheck probe
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3005/api/health/live || exit 1
+  CMD wget -qO- http://127.0.0.1:${PORT:-3005}/api/health/live || exit 1
 
 # Drop privileges to non-root user
 USER nextjs
