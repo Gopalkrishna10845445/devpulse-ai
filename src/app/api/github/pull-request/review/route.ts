@@ -1,18 +1,18 @@
 /**
- * Phase 8 — PR Review API Route
+ * Phase 8 & Production Phase 2 — PR Review API Route
  *
  * POST /api/github/pull-request/review
- *
- * Accepts repository coordinates and PR number, fetches authoritative GitHub data,
- * evaluates deterministic rules, and returns a reviewable PullRequestReview.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PRReviewEngine } from '@/lib/pr/prReviewEngine';
 import { GitHubPRError, parseRepoOwnerAndName } from '@/lib/pr/githubPRFetcher';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json();
     const { repositoryId, pullRequestNumber, baseSha, headSha, preloadedIndex, preloadedIntelligence } = body;
 
@@ -41,6 +41,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Repository Authorization Check
+    const authRes = await authorizeRepositoryAccess(user, repositoryId, 'pr_review');
+    if (!authRes.authorized) {
+      return NextResponse.json(
+        { success: false, error: authRes.reason || 'Access denied to repository.' },
+        { status: 403 }
+      );
+    }
+
     const review = await PRReviewEngine.reviewPullRequest({
       repositoryId,
       pullRequestNumber: prNumber,
@@ -55,6 +64,9 @@ export async function POST(req: NextRequest) {
       review,
     });
   } catch (err: any) {
+    if (err.statusCode) {
+      return createAuthErrorResponse(err);
+    }
     if (err instanceof GitHubPRError) {
       const status = err.statusCode || (err.code === 'NOT_FOUND' ? 404 : err.code === 'RATE_LIMITED' ? 429 : 500);
       return NextResponse.json(

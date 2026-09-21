@@ -55,6 +55,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <TopBar
         activeSection={activeSection}
         currentRepo={currentRepo}
+        onSelectRepo={onSelectRepo}
+        onNavigateSection={onSelectSection}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onOpenSearch={() => setIsCommandOpen(true)}
         onRefresh={onRefresh}

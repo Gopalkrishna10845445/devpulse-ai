@@ -30,12 +30,23 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
   const [analysisStep, setAnalysisStep] = useState('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [intelligence, setIntelligence] = useState<CodebaseIntelligence | null>(null);
+  const abortRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
     setRepoInput(initialRepoFullName);
     setIntelligence(null);
     setErrorMsg(null);
     setAnalysisStep('idle');
+
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
   }, [initialRepoFullName]);
   const [activeSubTab, setActiveSubTab] = useState<'architecture' | 'symbols' | 'relationships' | 'files' | 'dataflow'>('architecture');
   const [symbolFilter, setSymbolFilter] = useState<string>('ALL');
@@ -44,6 +55,12 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!repoInput.trim()) return;
+
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setIsAnalyzing(true);
     setErrorMsg(null);
@@ -60,6 +77,7 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
           owner: !repoInput.includes('/') && !repoInput.startsWith('http') ? repoInput : undefined,
           index: preloadedIndex || undefined,
         }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
@@ -72,10 +90,14 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
         setAnalysisStep('failed');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Network error during codebase analysis.');
-      setAnalysisStep('failed');
+      if (err.name !== 'AbortError') {
+        setErrorMsg(err.message || 'Network error during codebase analysis.');
+        setAnalysisStep('failed');
+      }
     } finally {
-      setIsAnalyzing(false);
+      if (abortRef.current === controller) {
+        setIsAnalyzing(false);
+      }
     }
   };
 

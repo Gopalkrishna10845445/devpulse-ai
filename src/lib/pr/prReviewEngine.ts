@@ -91,7 +91,7 @@ export class PRReviewEngine {
           branch: prMetadata.baseBranch || 'main',
         });
         if (index) {
-          intelligence = analyzeCodebase(index);
+          intelligence = await analyzeCodebase({ index });
         }
       } catch {
         // Fallback gracefully to diff-only analysis if full repo ingestion fails

@@ -1,23 +1,7 @@
 /**
- * Phase 7 — AI Code Fix Generation API Route
+ * Phase 7 & Production Phase 2 — AI Code Fix Generation API Route
  *
  * POST /api/repository/fix
- * Body: {
- *   repositoryId: string,
- *   commitSha?: string,
- *   findingId: string,
- *   category: 'security' | 'engineering',
- *   filePath: string,
- *   symbol?: string,
- *   lineRange?: string,
- *   findingTitle?: string,
- *   findingDescription?: string,
- *   findingRule?: string,
- *   findingRecommendation?: string,
- *   evidence?: any,
- *   preloadedIndex?: RepositoryIndex,
- *   preloadedIntelligence?: CodebaseIntelligence
- * }
  */
 
 import { NextResponse } from 'next/server';
@@ -25,11 +9,14 @@ import { globalFixEngine } from '@/lib/fixes/fixEngine';
 import { CodeFixRequest } from '@/lib/fixes/types';
 import { analyzeCodebase } from '@/lib/intelligence/codebaseAnalyzer';
 import { ingestRepository } from '@/lib/repository/repositoryIngestor';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json().catch(() => ({}));
     const {
       repositoryId,
@@ -68,6 +55,15 @@ export async function POST(req: Request) {
     }
 
     const trimmedRepoId = repositoryId.trim();
+
+    // Authorization Check
+    const authRes = await authorizeRepositoryAccess(user, trimmedRepoId, 'propose_fix');
+    if (!authRes.authorized) {
+      return NextResponse.json(
+        { error: authRes.reason || 'Access denied to repository.' },
+        { status: 403 }
+      );
+    }
 
     // 1. Ingest / load repository index
     let repoIndex = preloadedIndex;
@@ -130,6 +126,9 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error: any) {
+    if (error.statusCode) {
+      return createAuthErrorResponse(error);
+    }
     console.error('[API /api/repository/fix] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate code fix proposal.' },

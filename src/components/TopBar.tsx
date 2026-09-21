@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { NavSection } from './Sidebar';
 import {
   Menu,
@@ -8,11 +8,25 @@ import {
   Bell,
   GitBranch,
   RefreshCw,
+  User,
+  Settings,
+  Bot,
+  FolderGit2,
+  Shield,
+  CheckCircle2,
+  ExternalLink,
+  ChevronDown,
+  X,
+  Lock,
+  Check,
+  Radio,
 } from 'lucide-react';
 
 interface TopBarProps {
   activeSection: NavSection;
   currentRepo?: string;
+  onSelectRepo?: (repo: string) => void;
+  onNavigateSection?: (section: NavSection) => void;
   onOpenMobileMenu: () => void;
   onOpenSearch: () => void;
   onRefresh?: () => void;
@@ -39,14 +53,147 @@ const sectionTitles: Record<string, string> = {
   events: 'Events & Hooks',
 };
 
+const KNOWN_REPOSITORIES = [
+  'Gopalkrishna10845445/devpulse-ai',
+  'facebook/react',
+  'vercel/next.js',
+  'tailwindlabs/tailwindcss',
+  'microsoft/TypeScript',
+];
+
+interface SystemNotification {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  type: 'system' | 'security' | 'intelligence' | 'webhook';
+  read: boolean;
+}
+
+const INITIAL_NOTIFICATIONS: SystemNotification[] = [
+  {
+    id: 'n-1',
+    title: 'Webhook Dispatcher Online',
+    description: 'HMAC SHA-256 verification and delivery deduplication active.',
+    timestamp: 'Just now',
+    type: 'webhook',
+    read: false,
+  },
+  {
+    id: 'n-2',
+    title: 'Rate Limit Guard Active',
+    description: 'Autonomous rate quota monitor: 60 req/hr unauth / 5,000 auth.',
+    timestamp: '2m ago',
+    type: 'system',
+    read: false,
+  },
+  {
+    id: 'n-3',
+    title: 'AST Intelligence Ready',
+    description: 'Deterministic dependency graph and symbol index mounted.',
+    timestamp: '15m ago',
+    type: 'intelligence',
+    read: true,
+  },
+  {
+    id: 'n-4',
+    title: 'Security Scanner Standby',
+    description: '6 deterministic vulnerability and secret rules ready.',
+    timestamp: '1h ago',
+    type: 'security',
+    read: true,
+  },
+];
+
 export const TopBar: React.FC<TopBarProps> = ({
   activeSection,
   currentRepo = 'Gopalkrishna10845445/devpulse-ai',
+  onSelectRepo,
+  onNavigateSection,
   onOpenMobileMenu,
   onOpenSearch,
   onRefresh = () => {},
   isRefreshing = false,
 }) => {
+  // Dropdown states
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isRepoSwitcherOpen, setIsRepoSwitcherOpen] = useState(false);
+
+  // Avatar image error fallback
+  const [avatarError, setAvatarError] = useState(false);
+
+  // Custom repo input in switcher
+  const [customRepoInput, setCustomRepoInput] = useState('');
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<SystemNotification[]>(INITIAL_NOTIFICATIONS);
+
+  // Refs for click outside
+  const profileRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const repoSwitcherRef = useRef<HTMLDivElement>(null);
+
+  // Close menus on outside click or Escape
+  const closeAllMenus = useCallback(() => {
+    setIsProfileOpen(false);
+    setIsNotificationsOpen(false);
+    setIsRepoSwitcherOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeAllMenus();
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (profileRef.current && !profileRef.current.contains(target)) {
+        setIsProfileOpen(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setIsNotificationsOpen(false);
+      }
+      if (repoSwitcherRef.current && !repoSwitcherRef.current.contains(target)) {
+        setIsRepoSwitcherOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [closeAllMenus]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+  };
+
+  const handleSelectRepository = (repo: string) => {
+    if (onSelectRepo && repo.trim()) {
+      onSelectRepo(repo.trim());
+      setIsRepoSwitcherOpen(false);
+      setCustomRepoInput('');
+    }
+  };
+
+  const handleNavigate = (section: NavSection) => {
+    if (onNavigateSection) {
+      onNavigateSection(section);
+      closeAllMenus();
+    }
+  };
+
   return (
     <header className="h-topbar-h fixed top-0 right-0 left-0 lg:left-sidebar-w z-30 bg-surface border-b border-border px-4 sm:px-5 flex items-center justify-between">
       {/* Left: Mobile menu trigger + Section Breadcrumb */}
@@ -68,16 +215,95 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Center/Right: Repository Switcher + Search + Notifications + User */}
+      {/* Center/Right: Repository Switcher + Search + Refresh + Notifications + User */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Active Repo Pill */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-alt border border-border text-caption font-mono max-w-[240px]">
-          <span className="w-2 h-2 rounded-full bg-semantic-green flex-shrink-0" />
-          <span className="text-text-primary truncate font-medium">{currentRepo}</span>
-          <span className="text-text-muted flex-shrink-0">:main</span>
+        {/* 1. Repository Quick-Switcher */}
+        <div className="relative" ref={repoSwitcherRef}>
+          <button
+            onClick={() => {
+              setIsRepoSwitcherOpen((prev) => !prev);
+              setIsProfileOpen(false);
+              setIsNotificationsOpen(false);
+            }}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-alt border border-border text-caption font-mono max-w-[240px] hover:border-border-strong transition-colors cursor-pointer"
+            aria-label="Select active repository"
+            aria-expanded={isRepoSwitcherOpen}
+          >
+            <span className="w-2 h-2 rounded-full bg-semantic-green flex-shrink-0" />
+            <span className="text-text-primary truncate font-medium">{currentRepo}</span>
+            <span className="text-text-muted flex-shrink-0">:main</span>
+            <ChevronDown size={12} className="text-text-muted ml-0.5 flex-shrink-0" />
+          </button>
+
+          {/* Repo Switcher Dropdown */}
+          {isRepoSwitcherOpen && (
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-md bg-surface border border-border shadow-lg z-50 p-3 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <span className="text-caption font-mono text-text-muted uppercase tracking-wider">
+                  Active Repository
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-alt text-text-muted border border-border">
+                  Commit-Scoped
+                </span>
+              </div>
+
+              {/* Custom Repo Switch Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (customRepoInput.trim()) {
+                    handleSelectRepository(customRepoInput.trim());
+                  }
+                }}
+                className="flex items-center gap-1.5"
+              >
+                <input
+                  type="text"
+                  placeholder="owner/repo..."
+                  value={customRepoInput}
+                  onChange={(e) => setCustomRepoInput(e.target.value)}
+                  className="flex-1 px-2.5 py-1.5 text-caption font-mono bg-surface-alt border border-border rounded text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-strong"
+                />
+                <button
+                  type="submit"
+                  disabled={!customRepoInput.trim()}
+                  className="px-2.5 py-1.5 text-caption font-medium rounded bg-text-primary text-surface hover:opacity-90 disabled:opacity-40 transition-opacity"
+                >
+                  Switch
+                </button>
+              </form>
+
+              {/* Suggested / Ingested Repositories */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-medium text-text-muted block mb-1">
+                  Preset Repositories
+                </span>
+                {KNOWN_REPOSITORIES.map((repo) => {
+                  const isSelected = repo === currentRepo;
+                  return (
+                    <button
+                      key={repo}
+                      onClick={() => handleSelectRepository(repo)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between gap-2 text-caption font-mono transition-colors ${
+                        isSelected
+                          ? 'bg-surface-alt text-text-primary font-medium border border-border'
+                          : 'text-text-secondary hover:bg-surface-alt hover:text-text-primary'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <FolderGit2 size={13} className={isSelected ? 'text-semantic-green' : 'text-text-muted'} />
+                        <span className="truncate">{repo}</span>
+                      </div>
+                      {isSelected && <Check size={13} className="text-semantic-green flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Command Search Bar Trigger */}
+        {/* 2. Command Search Bar Trigger */}
         <button
           onClick={onOpenSearch}
           className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border bg-surface text-body-sm text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
@@ -90,7 +316,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           </kbd>
         </button>
 
-        {/* Refresh button */}
+        {/* 3. Refresh button */}
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
@@ -101,23 +327,209 @@ export const TopBar: React.FC<TopBarProps> = ({
           <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
 
-        {/* Notifications */}
-        <button
-          className="relative p-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell size={14} />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-semantic-green" />
-        </button>
+        {/* 4. Notifications Dropdown */}
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => {
+              setIsNotificationsOpen((prev) => !prev);
+              setIsProfileOpen(false);
+              setIsRepoSwitcherOpen(false);
+            }}
+            className="relative p-1.5 rounded-md border border-border text-text-muted hover:text-text-primary hover:border-border-strong transition-colors"
+            aria-label="Notifications"
+            aria-expanded={isNotificationsOpen}
+          >
+            <Bell size={14} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-semantic-green ring-2 ring-surface animate-pulse" />
+            )}
+          </button>
 
-        {/* User Avatar */}
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-border flex-shrink-0 bg-surface-alt">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
-            alt="Gopal"
-            className="w-full h-full object-cover"
-          />
+          {/* Notifications Dropdown Panel */}
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-md bg-surface border border-border shadow-lg z-50 p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <span className="text-body-sm font-semibold text-text-primary">System Signals</span>
+                  {unreadCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-semantic-green/10 text-semantic-green text-[10px] font-mono font-medium">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-[11px] text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={handleClearNotifications}
+                      className="text-[11px] text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="py-8 text-center text-caption text-text-muted space-y-1">
+                  <CheckCircle2 size={24} className="mx-auto text-semantic-green opacity-80" />
+                  <p className="font-medium text-text-primary">All systems normal</p>
+                  <p>No unread alerts or background errors.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-2.5 rounded border transition-colors ${
+                        n.read
+                          ? 'bg-surface border-border opacity-70'
+                          : 'bg-surface-alt border-border-strong'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-caption font-semibold text-text-primary">
+                          {n.title}
+                        </span>
+                        <span className="text-[10px] font-mono text-text-muted">
+                          {n.timestamp}
+                        </span>
+                      </div>
+                      <p className="text-caption text-text-secondary mt-0.5 leading-snug">
+                        {n.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 5. Profile / User Avatar & Menu */}
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={() => {
+              setIsProfileOpen((prev) => !prev);
+              setIsNotificationsOpen(false);
+              setIsRepoSwitcherOpen(false);
+            }}
+            className="flex items-center gap-2 p-0.5 rounded-full border border-border hover:border-border-strong transition-colors focus:outline-none focus:ring-2 focus:ring-text-muted"
+            aria-label="User profile menu"
+            aria-haspopup="true"
+            aria-expanded={isProfileOpen}
+          >
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-surface-alt flex items-center justify-center">
+              {!avatarError ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
+                  alt="Gopal Krishna"
+                  onError={() => setAvatarError(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-caption font-mono font-bold text-text-primary">G</span>
+              )}
+            </div>
+          </button>
+
+          {/* Profile Dropdown Overlay */}
+          {isProfileOpen && (
+            <div className="absolute right-0 mt-2 w-72 rounded-md bg-surface border border-border shadow-lg z-50 p-4 space-y-3">
+              {/* User Identity Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
+                <div className="w-10 h-10 rounded-full bg-surface-alt border border-border flex items-center justify-center flex-shrink-0">
+                  {!avatarError ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
+                      alt="Gopal Krishna"
+                      onError={() => setAvatarError(true)}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-body-sm font-mono font-bold text-text-primary">G</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-body-sm font-semibold text-text-primary truncate">
+                    Gopal Krishna
+                  </div>
+                  <div className="text-caption font-mono text-text-muted truncate">
+                    @Gopalkrishna10845445
+                  </div>
+                  <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.2 rounded bg-surface-alt text-[10px] font-mono text-text-secondary border border-border">
+                    <span>Staff Engineer</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Chips */}
+              <div className="space-y-1.5 bg-surface-alt p-2.5 rounded border border-border text-[11px] font-mono text-text-secondary">
+                <div className="flex items-center justify-between">
+                  <span className="text-text-muted">Environment:</span>
+                  <span className="text-text-primary font-medium">Local Dev Instance</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-muted">Client Secrets:</span>
+                  <span className="text-semantic-green font-medium">0 Exposed</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-muted">GitHub Mode:</span>
+                  <span className="text-text-primary font-medium">Server-Side Auth</span>
+                </div>
+              </div>
+
+              {/* Navigation Actions */}
+              <div className="space-y-1 pt-1">
+                <button
+                  onClick={() => handleNavigate('settings')}
+                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                >
+                  <Settings size={14} className="text-text-muted" />
+                  <span>Settings &amp; Configuration</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('agent')}
+                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                >
+                  <Bot size={14} className="text-text-muted" />
+                  <span>DevPilot Agent Workspace</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('ingestion')}
+                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                >
+                  <FolderGit2 size={14} className="text-text-muted" />
+                  <span>Repository Ingestion</span>
+                </button>
+              </div>
+
+              {/* Session / Authentication Footer */}
+              <div className="pt-2 border-t border-border flex items-center justify-between text-caption text-text-muted">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-semantic-green" />
+                  <span className="text-[11px] font-mono">Server Session Active</span>
+                </div>
+                <button
+                  onClick={() => handleNavigate('settings')}
+                  className="text-[11px] text-text-muted hover:text-text-primary hover:underline"
+                >
+                  Configure Keys
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

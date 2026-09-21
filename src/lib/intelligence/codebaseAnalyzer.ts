@@ -4,6 +4,8 @@
  * Consumes the Phase 2 Repository Index, fetches source contents for primary files,
  * extracts language-aware symbols, resolves import dependency graphs, computes
  * module coupling relationships, and synthesizes the full architectural model.
+ *
+ * Single-flight deduplication & 5-minute memory caching prevents repeated redundant analysis.
  */
 
 import { RepositoryIndex, RepositoryRef } from '../repository/types';
@@ -26,6 +28,17 @@ import {
 
 const API_BASE = 'https://api.github.com';
 const MAX_SOURCE_FETCH_LIMIT = 40;
+const CODEBASE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+
+// ─── Single-Flight Coalescing & Memory Cache ───────────────────────────────────
+
+const inFlightCodebaseAnalysis = new Map<string, Promise<CodebaseIntelligence>>();
+const codebaseCache = new Map<string, { intelligence: CodebaseIntelligence; timestamp: number }>();
+
+export function clearCodebaseAnalysisCache(): void {
+  codebaseCache.clear();
+  inFlightCodebaseAnalysis.clear();
+}
 
 function buildHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -85,9 +98,55 @@ export function determineFileRole(filePath: string): FileRole {
   return 'unknown';
 }
 
-// ─── Main Analyze Codebase Function ───────────────────────────────────────────
+// ─── Main Analyze Codebase Function (With Single-Flight & TTL Cache) ───────────
 
 export async function analyzeCodebase(params: {
+  index: RepositoryIndex;
+  providedContents?: Map<string, string>;
+} | RepositoryIndex): Promise<CodebaseIntelligence> {
+  const index: RepositoryIndex = (params as any)?.index || (params as any);
+  const providedContents = (params as any)?.providedContents;
+  const cacheKey = index?.repository?.fullName
+    ? `${index.repository.fullName.toLowerCase()}@${index.repository.defaultBranch || 'main'}`
+    : 'unknown@main';
+
+  // If contents are provided in-memory (e.g. tests or local fixtures), bypass cache
+  if (!providedContents && cacheKey !== 'unknown@main') {
+    const cached = codebaseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CODEBASE_CACHE_TTL_MS) {
+      return cached.intelligence;
+    }
+
+    const inFlight = inFlightCodebaseAnalysis.get(cacheKey);
+    if (inFlight) {
+      return inFlight;
+    }
+  }
+
+  const executionPromise = (async () => {
+    try {
+      const intelligence = await doAnalyzeCodebase({ index, providedContents });
+      if (!providedContents) {
+        codebaseCache.set(cacheKey, { intelligence, timestamp: Date.now() });
+      }
+      return intelligence;
+    } finally {
+      if (!providedContents) {
+        inFlightCodebaseAnalysis.delete(cacheKey);
+      }
+    }
+  })();
+
+  if (!providedContents) {
+    inFlightCodebaseAnalysis.set(cacheKey, executionPromise);
+  }
+
+  return executionPromise;
+}
+
+// ─── Core Analysis Implementation ──────────────────────────────────────────────
+
+async function doAnalyzeCodebase(params: {
   index: RepositoryIndex;
   providedContents?: Map<string, string>;
 }): Promise<CodebaseIntelligence> {

@@ -1,9 +1,9 @@
 /**
- * Phase 7 — Central Code Fix Orchestrator & In-Memory Store
+ * Phase 7 & Production Phase 1 — Central Code Fix Orchestrator & Persistent Store
  *
  * Coordinates fix request validation, context building, AI proposal generation,
  * patch validation, proposal lifecycle transitions (review/approve/reject),
- * and controlled in-memory patch application.
+ * controlled in-memory patch application, and PostgreSQL audit trail persistence.
  */
 
 import { CodebaseIntelligence } from '../intelligence/types';
@@ -13,6 +13,8 @@ import { buildFixContext } from './fixContextBuilder';
 import { CodeFixGenerator } from './fixGenerator';
 import { validateProposalPatch } from './patchValidator';
 import { ApplyFixRequest, ApplyFixResponse, CodeFixProposal, CodeFixRequest } from './types';
+import { FixDatabaseRepository } from '../db/repositories';
+import { Logger } from '../logger';
 
 export class CodeFixEngine {
   private proposals: Map<string, CodeFixProposal> = new Map();
@@ -63,6 +65,11 @@ export class CodeFixEngine {
     // 5. Store in memory
     this.proposals.set(proposal.id, proposal);
 
+    // 6. Persist to PostgreSQL
+    FixDatabaseRepository.saveProposal(proposal).catch((err) => {
+      Logger.debug('Database fix proposal persistence skipped', { proposalId: proposal.id });
+    });
+
     return proposal;
   }
 
@@ -96,6 +103,12 @@ export class CodeFixEngine {
     }
 
     this.proposals.set(proposal.id, proposal);
+
+    // Persist updated status
+    FixDatabaseRepository.saveProposal(proposal).catch((err) => {
+      Logger.debug('Database fix review update skipped', { proposalId: proposal.id });
+    });
+
     return proposal;
   }
 
@@ -146,7 +159,7 @@ export class CodeFixEngine {
     }
 
     // 5. Apply in-memory patch to target file
-    const fileNode = (repoIndex.files || []).find(f => f.path === proposal.targetFile);
+    const fileNode = (repoIndex.files || []).find((f) => f.path === proposal.targetFile);
     if (!fileNode || typeof fileNode.content !== 'string') {
       throw new Error(`Target file '${proposal.targetFile}' was not found in repository index.`);
     }
@@ -161,6 +174,17 @@ export class CodeFixEngine {
     proposal.status = 'applied';
     proposal.appliedAt = new Date().toISOString();
     this.proposals.set(proposal.id, proposal);
+
+    // Persist status and record immutable audit approval
+    FixDatabaseRepository.saveProposal(proposal).catch(() => {});
+    FixDatabaseRepository.recordApproval(
+      proposal.id,
+      repositoryId,
+      commitSha,
+      'apply_fix',
+      'approved',
+      proposal.diffHash
+    ).catch(() => {});
 
     return {
       success: true,

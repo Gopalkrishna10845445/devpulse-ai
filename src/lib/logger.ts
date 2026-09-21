@@ -119,3 +119,6 @@ export class Logger {
     this.emit('debug', message, context);
   }
 }
+
+export const logger = Logger;
+

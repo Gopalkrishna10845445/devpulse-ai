@@ -126,9 +126,24 @@ export function sanitizeEvidenceSnippet(lineContent: string, rawSecret: string):
  */
 export function maskTextSecrets(text: string): string {
   if (!text) return '';
-  const tokenRegex = /\b(?:sk-(?:proj-|live-)?[a-zA-Z0-9_-]{20,}|AKIA[0-9A-Z]{16}|(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36}|xox[baprs]-[0-9a-zA-Z-]{20,}|(?:sk|rk)_live_[0-9a-zA-Z]{24,}|AIza[0-9A-Za-z\\-_]{35})\b/g;
-  return text.replace(tokenRegex, (match) => {
+  const rsaKeyRegex = /-----BEGIN[ A-Z0-9_-]*PRIVATE KEY-----[\s\S]*?-----END[ A-Z0-9_-]*PRIVATE KEY-----|BEGIN RSA PRIVATE KEY[\s\S]*?END RSA PRIVATE KEY/gi;
+  let sanitized = text.replace(rsaKeyRegex, '[REDACTED_SECRET]');
+
+  // Redact redis:// and postgres:// connection URLs
+  sanitized = sanitized
+    .replace(/redis:\/\/(?:[^:@]+:)?([^@]+)@/gi, 'redis://[REDACTED_AUTH]@')
+    .replace(/postgres:\/\/[^@]+@/gi, 'postgres://[REDACTED_AUTH]@');
+
+  // Redact Bearer tokens
+  sanitized = sanitized.replace(/Bearer\s+([a-zA-Z0-9_\-\.]{20,})/gi, (match, token) => {
+    if (isPlaceholderSecret(token)) return match;
+    return `Bearer ${maskSecret(token)}`;
+  });
+
+  const tokenRegex = /\b(?:sk-(?:proj-|live-)?[a-zA-Z0-9_-]{20,}|AKIA[0-9A-Z]{16}|(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{20,}|xox[baprs]-[0-9a-zA-Z-]{20,}|(?:sk|rk)_live_[0-9a-zA-Z]{20,}|AIza[0-9A-Za-z\\-_]{20,})\b/g;
+  return sanitized.replace(tokenRegex, (match) => {
     if (isPlaceholderSecret(match)) return match;
     return maskSecret(match);
   });
 }
+

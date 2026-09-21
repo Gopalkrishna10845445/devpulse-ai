@@ -1,12 +1,16 @@
 /**
- * Phase 4 — Repository-Isolated Vector Store
+ * Phase 4 & Production Phase 1 — Repository-Isolated Vector Store
  *
- * Provides in-memory vector storage with strict repository and commit isolation.
+ * Provides hybrid PostgreSQL 16 + pgvector persistent vector storage with in-memory
+ * caching for sub-millisecond hot-path access and strict repository/commit isolation.
  * Guarantees that query retrieval in Repo A never returns records from Repo B.
  */
 
 import { CodeChunk, IndexStatus, VectorRecord } from './types';
 import { cosineSimilarity } from './embeddings';
+import { RagDatabaseRepository } from '../db/repositories';
+import { db } from '../db/client';
+import { Logger } from '../logger';
 
 export const CURRENT_INDEX_VERSION = 1;
 
@@ -29,9 +33,9 @@ export class RepositoryVectorStore {
     records: VectorRecord[]
   ): Promise<IndexStatus> {
     const key = this.getNamespaceKey(repositoryId, commitSha);
-    
+
     // Ensure all records have repository and commit explicitly stamped
-    const sanitizedRecords = records.map(r => ({
+    const sanitizedRecords = records.map((r) => ({
       ...r,
       repositoryId,
       commitSha,
@@ -42,10 +46,11 @@ export class RepositoryVectorStore {
       },
     }));
 
+    // Cache in RAM for instant lookup
     this.store.set(key, sanitizedRecords);
 
     // Count unique files indexed
-    const uniqueFiles = new Set(sanitizedRecords.map(r => r.filePath)).size;
+    const uniqueFiles = new Set(sanitizedRecords.map((r) => r.filePath)).size;
 
     const status: IndexStatus = {
       repositoryId,
@@ -58,6 +63,18 @@ export class RepositoryVectorStore {
     };
 
     this.metadata.set(key, status);
+
+    // Persist to PostgreSQL + pgvector if database is available
+    try {
+      if (await db.isAvailable()) {
+        await RagDatabaseRepository.upsertChunks(repositoryId, commitSha, sanitizedRecords);
+      }
+    } catch (err: any) {
+      Logger.warn('Database chunk persistence skipped or failed; using in-memory store', {
+        errorCategory: 'RETRIEVAL_ERROR',
+      }, err);
+    }
+
     return status;
   }
 
@@ -107,7 +124,31 @@ export class RepositoryVectorStore {
     }
   ): Promise<{ chunk: CodeChunk; score: number }[]> {
     const key = this.getNamespaceKey(repositoryId, commitSha);
-    const records = this.store.get(key) || [];
+    let records = this.store.get(key) || [];
+
+    // If not in RAM, try fetching from PostgreSQL + pgvector
+    if (records.length === 0) {
+      try {
+        if (await db.isAvailable()) {
+          const dbRecords = await RagDatabaseRepository.similaritySearch(
+            repositoryId,
+            commitSha,
+            queryEmbedding,
+            topK
+          );
+          if (dbRecords.length > 0) {
+            return dbRecords.map((r) => ({
+              chunk: r.chunk,
+              score: r.score || 0,
+            }));
+          }
+        }
+      } catch (err) {
+        Logger.warn('pgvector similarity search failed; falling back', {
+          errorCategory: 'RETRIEVAL_ERROR',
+        }, err);
+      }
+    }
 
     if (records.length === 0) {
       return [];
@@ -157,11 +198,11 @@ export class RepositoryVectorStore {
     const records = this.store.get(key) || [];
     return records
       .filter(
-        r =>
+        (r) =>
           r.repositoryId.toLowerCase() === repositoryId.toLowerCase() &&
           r.commitSha === commitSha
       )
-      .map(r => r.chunk);
+      .map((r) => r.chunk);
   }
 
   /**
@@ -187,7 +228,7 @@ export class RepositoryVectorStore {
    * Clear all records (testing only)
    */
   clearAll(): void {
-    this.store.clear( );
+    this.store.clear();
     this.metadata.clear();
   }
 }

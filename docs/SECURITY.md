@@ -12,7 +12,38 @@ DevPilot treats all external repository content, user prompts, webhook payloads,
 
 ---
 
-## 2. Secret & Token Management
+## 2. Authentication & Session Security (Production Phase 2)
+1. **GitHub OAuth 2.0 Integration:**
+   - Initiated via `/api/auth/github` with a random 256-bit CSRF state cookie (`devpilot_oauth_state`).
+   - Validates state equality on `/api/auth/callback` before exchanging the temporary code for an access token.
+   - GitHub user identity (`github_id`, `login`, `email`, `avatar_url`) is extracted and persisted into the `users` database table.
+
+2. **Session Security & Invalidation:**
+   - Sessions are generated using high-entropy tokens (`crypto.randomBytes(32)`).
+   - Delivered exclusively via `devpilot_session` HTTP-only, `SameSite=Lax` cookies with `Secure` flags in production.
+   - No access tokens or session credentials are ever stored in `localStorage`, `sessionStorage`, or client state.
+   - Logout (`/api/auth/logout`) deletes the session record from the database and immediately clears the cookie.
+
+3. **Insecure Direct Object Reference (IDOR) Defense:**
+   - Every protected repository endpoint executes `authorizeRepositoryAccess` before performing any operation, indexing, RAG vector retrieval, or code modification.
+   - Access is granted if the user is the direct repository owner or holds an active role in `repository_memberships`.
+   - Unauthorized attempts receive immediate `403 Forbidden` / `404 Not Found` with zero repository metadata leakage.
+
+4. **Distributed Rate Limiting & Queue Security (Production Phase 3):**
+   - Atomic sliding-window rate limiting enforced across all API endpoints with per-user quota isolation in Redis.
+   - Job payloads enqueued to BullMQ contain identifiers only (`repositoryId`, `commitSha`, `userId`, `deliveryId`, `traceId`) — tokens, API keys, and session secrets are strictly forbidden.
+   - Workers re-check user and repository authorization independently before executing mutating or sensitive operations.
+
+5. **GitHub App Scoped Authentication & Observability Sanitization (Production Phase 4):**
+   - Repository operations utilize short-lived (60m) installation tokens scoped strictly to authorized installations.
+   - GitHub App private keys are stored securely server-side and never exposed to client bundles or logged.
+   - OpenTelemetry distributed traces and Prometheus metrics enforce strict automatic redaction (`[REDACTED_SECRET]`) of tokens, cookies, and database URLs.
+   - Prometheus metrics enforce bounded label cardinality (no user IDs, commit SHAs, or code chunks).
+   - Server-Sent Events (SSE) enforce session authentication, repository authorization, and zero chain-of-thought exposure.
+
+---
+
+## 3. Secret & Token Management
 
 1. **Zero Secret Leakage:**
    - Server-side environment variables (`GITHUB_TOKEN`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `GITHUB_WEBHOOK_SECRET`) are never exposed to browser bundles, client components, API responses, or client telemetry.

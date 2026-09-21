@@ -1,10 +1,13 @@
 .git
 .agents
+.gemini
+brain
 .next
 node_modules
 npm-debug.log
 .env
-.env*.local
+.env*
+!.env.example
 *.md
 !README.md
 docs
@@ -14,4 +17,9 @@ coverage
 .idea
 *.bat
 *.pdf
+*.pem
+*.key
+*.log
+tmp
 generate_interview_pdf.py
+docker-compose*.override.yml

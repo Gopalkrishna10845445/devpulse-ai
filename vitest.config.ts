@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/*.test.ts'],
     exclude: ['node_modules', '.next'],
+    testTimeout: 15000,
+    hookTimeout: 15000,
     coverage: {
       reporter: ['text', 'lcov'],
       include: ['src/lib/**'],

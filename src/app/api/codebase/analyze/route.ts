@@ -1,13 +1,33 @@
 import { NextResponse } from 'next/server';
 import { IngestionError, ingestRepository } from '@/lib/repository/repositoryIngestor';
 import { analyzeCodebase } from '@/lib/intelligence/codebaseAnalyzer';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json().catch(() => ({}));
     const { owner, repository, fullName, url, branch, index: existingIndex } = body;
+
+    const targetRepoId = fullName || (owner && repository ? `${owner}/${repository}` : url || (existingIndex && existingIndex.repository?.fullName));
+    if (targetRepoId) {
+      const authRes = await authorizeRepositoryAccess(user, targetRepoId, 'analyze');
+      if (!authRes.authorized) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'FORBIDDEN',
+              message: authRes.reason || 'Access denied to repository.',
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     let repoIndex = existingIndex;
 
@@ -42,6 +62,9 @@ export async function POST(req: Request) {
       intelligence,
     });
   } catch (error: any) {
+    if (error.statusCode) {
+      return createAuthErrorResponse(error);
+    }
     console.error('[API /api/codebase/analyze] Error:', error.message || error);
 
     if (error instanceof IngestionError) {

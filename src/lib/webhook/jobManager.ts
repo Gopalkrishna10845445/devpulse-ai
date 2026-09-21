@@ -1,9 +1,9 @@
 /**
- * Phase 9 — Webhook Job Manager & Event Processor
+ * Phase 9 & Production Phase 1 — Webhook Job Manager & Event Processor
  *
  * Manages background analysis jobs triggered by verified GitHub webhooks.
  * Enforces replay protection (delivery ID deduplication), job deduplication,
- * SHA invalidation, failure classification, and idempotent execution.
+ * SHA invalidation, failure classification, and persistent database deduplication.
  */
 
 import {
@@ -21,6 +21,9 @@ import { CodebaseIntelligence } from '../intelligence/types';
 import { analyzeEngineeringHealth } from '../engineering/engineeringEngine';
 import { analyzeSecurityHealth } from '../security/securityEngine';
 import { PRReviewEngine } from '../pr/prReviewEngine';
+import { WebhookDatabaseRepository } from '../db/repositories';
+import { db } from '../db/client';
+import { Logger } from '../logger';
 
 class WebhookJobManagerSingleton {
   private processedDeliveries = new Map<string, WebhookDeliveryRecord>();
@@ -39,11 +42,16 @@ class WebhookJobManagerSingleton {
    */
   public recordDelivery(record: WebhookDeliveryRecord): void {
     this.processedDeliveries.set(record.deliveryId, record);
-    // Keep map bounded to the last 500 deliveries
+    // Keep map bounded to the last 500 deliveries in RAM
     if (this.processedDeliveries.size > 500) {
       const firstKey = this.processedDeliveries.keys().next().value;
       if (firstKey) this.processedDeliveries.delete(firstKey);
     }
+
+    // Asynchronously persist to PostgreSQL
+    WebhookDatabaseRepository.recordDelivery(record).catch((err) => {
+      Logger.debug('Webhook database record skipped', { deliveryId: record.deliveryId });
+    });
   }
 
   /**
@@ -200,7 +208,7 @@ class WebhookJobManagerSingleton {
    * Manually retries a failed analysis job.
    */
   public async retryJob(jobId: string): Promise<RepositoryAnalysisJob | null> {
-    const job = Array.from(this.jobs.values()).find(j => j.id === jobId);
+    const job = Array.from(this.jobs.values()).find((j) => j.id === jobId);
     if (!job) return null;
 
     if (job.retryCount >= job.maxRetries) {
@@ -247,7 +255,7 @@ class WebhookJobManagerSingleton {
    * Resets in-memory state (useful for automated test isolation).
    */
   public resetState(): void {
-    this.processedDeliveries.clear( );
+    this.processedDeliveries.clear();
     this.jobs.clear();
     this.stalePRReviews.clear();
   }

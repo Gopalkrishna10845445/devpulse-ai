@@ -3,11 +3,12 @@
  *
  * Orchestrates full repository ingestion:
  *   1. Validates repository coordinates
- *   2. Fetches repository metadata from GitHub REST API
- *   3. Fetches recursive repository tree
- *   4. Runs deterministic file filtering, binary & sensitive classification
- *   5. Fetches and parses dependency manifests with bounded concurrency
- *   6. Assembles the typed `RepositoryIndex`
+ *   2. Single-flight promise deduplication & short-term TTL caching
+ *   3. Fetches repository metadata from GitHub REST API
+ *   4. Fetches recursive repository tree
+ *   5. Runs deterministic file filtering, binary & sensitive classification
+ *   6. Fetches and parses dependency manifests with bounded concurrency
+ *   7. Assembles the typed `RepositoryIndex`
  *
  * Strict server-side execution — GITHUB_TOKEN never leaves the server.
  */
@@ -31,6 +32,17 @@ import {
 } from './types';
 
 const API_BASE = 'https://api.github.com';
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory TTL
+
+// ─── Single-Flight Coalescing & Memory Cache ───────────────────────────────────
+
+const inFlightIngestions = new Map<string, Promise<RepositoryIndex>>();
+const indexCache = new Map<string, { index: RepositoryIndex; timestamp: number }>();
+
+export function clearIngestionCache(): void {
+  indexCache.clear();
+  inFlightIngestions.clear();
+}
 
 export class IngestionError extends Error {
   code: IngestionErrorCode;
@@ -132,17 +144,54 @@ async function fetchFileContent(
   }
 }
 
-// ─── Main Ingestor Function ───────────────────────────────────────────────────
+// ─── Main Ingestor Function (With Single-Flight & TTL Cache) ────────────────────
 
 export async function ingestRepository(
   request: IngestRepositoryRequest,
   limits: IngestionLimits = DEFAULT_INGESTION_LIMITS
 ): Promise<RepositoryIndex> {
+  const { owner, repo, branch: requestedBranch } = parseRepositoryCoordinates(request);
+  const cacheKey = `${owner.toLowerCase()}/${repo.toLowerCase()}@${requestedBranch || 'default'}`;
+
+  // 1. Check in-memory TTL cache
+  const cached = indexCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.index;
+  }
+
+  // 2. Check single-flight in-flight promise (coalesce duplicate parallel calls)
+  const inFlight = inFlightIngestions.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  // 3. Create execution promise and register it
+  const executionPromise = (async () => {
+    try {
+      const index = await doIngestRepository(owner, repo, requestedBranch, limits);
+      indexCache.set(cacheKey, { index, timestamp: Date.now() });
+      return index;
+    } finally {
+      inFlightIngestions.delete(cacheKey);
+    }
+  })();
+
+  inFlightIngestions.set(cacheKey, executionPromise);
+  return executionPromise;
+}
+
+// ─── Core Ingestion Implementation ─────────────────────────────────────────────
+
+async function doIngestRepository(
+  owner: string,
+  repo: string,
+  requestedBranch: string | undefined,
+  limits: IngestionLimits
+): Promise<RepositoryIndex> {
   const startTime = Date.now();
   let apiRequestsCount = 0;
   let rateLimited = false;
 
-  const { owner, repo, branch: requestedBranch } = parseRepositoryCoordinates(request);
   const headers = buildHeaders();
 
   // ── 1. Fetch Repository Metadata ───────────────────────────────────────────
@@ -151,6 +200,12 @@ export async function ingestRepository(
   try {
     const metaRes = await fetch(`${API_BASE}/repos/${owner}/${repo}`, { headers });
 
+    if (metaRes.status === 401) {
+      throw new IngestionError(
+        'ACCESS_DENIED',
+        'GitHub API authentication failed (401). Please check that GITHUB_TOKEN is valid.'
+      );
+    }
     if (metaRes.status === 404) {
       throw new IngestionError(
         'REPOSITORY_NOT_FOUND',
@@ -208,6 +263,12 @@ export async function ingestRepository(
       headers
     );
 
+    if (treeRes.status === 401) {
+      throw new IngestionError(
+        'ACCESS_DENIED',
+        'GitHub API authentication failed (401) while fetching repository tree.'
+      );
+    }
     if (treeRes.status === 404) {
       throw new IngestionError(
         'EMPTY_REPOSITORY',

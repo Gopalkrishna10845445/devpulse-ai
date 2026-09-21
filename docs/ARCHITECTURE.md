@@ -114,43 +114,78 @@ DevPilot is a modular, high-assurance intelligence platform designed to ingest, 
   - Proposal Signatures: Validates SHA-256 proposal hash and commit SHA to prevent stale writes.
   - Command Allowlist: Restricts shell validations strictly to safe commands (`tsc`, `vitest`, `lint`, `build`).
 
+### 2.10 Authentication, Session & Access Control (`src/lib/auth`)
+- **GitHub OAuth Flow:** Standard OAuth 2.0 authorization code grant with CSRF state verification.
+- **Server Sessions:** Cryptographically secure 256-bit session tokens stored in `sessions` table and delivered via HTTP-only `SameSite=Lax` cookies.
+- **User & Membership Persistence:** Relational models for `users` and `repository_memberships` supporting `OWNER`, `MEMBER`, and `VIEWER` roles.
+- **API Middleware & IDOR Defense:** Centralized `requireAuth` and `authorizeRepositoryAccess` enforcing user identity from the server-side session and checking repo permissions before any data retrieval.
+
+### 2.11 Distributed Redis Caching, Rate Limiting & BullMQ Background Queues (`src/lib/redis`, `src/lib/queue`)
+- **Distributed Cache:** Redis 7 distributed cache with single-flight request coalescing (`RedisCache.wrap`) to prevent redundant analysis across horizontal replicas.
+- **Atomic Sliding-Window Rate Limiting:** Redis-backed rate limiting with isolated user quotas across API operations (`github_api`, `ai_query`, `repo_analysis`, `agent_run`, `fix_generation`, `webhook`).
+- **BullMQ Background Queues:** Centralized queues (`webhook-processing`, `repository-analysis`, `rag-indexing`) with bounded exponential retries (max 3 attempts, 1000ms delay), idempotency keys, and graceful shutdown workers.
+
+### 2.12 GitHub App & Scoped Installation Tokens (`src/lib/github/app`)
+- **App JWT Signing:** Signs RS256 JWTs using `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` with 10-minute maximum expiry.
+- **Installation Token Lifecycle:** Scoped access tokens (`v1.installation_token...`) cached in Redis/memory for 50 minutes (tokens valid for 60m), strictly replacing the server-wide PAT dependency.
+- **Installation Persistence:** Relational `github_installations` model associating installation IDs with organizations and repositories.
+
+### 2.13 Observability, Prometheus Metrics & Server-Sent Events (`src/lib/observability`, `src/lib/sse`)
+- **OpenTelemetry Distributed Tracing:** W3C `traceparent` context propagation across HTTP boundaries, queues, and worker jobs with automated credential redaction.
+- **Prometheus Metrics Registry:** Standard metrics exposed on `/api/metrics` with strict bounded label cardinality (operations, status codes, queues).
+- **Server-Sent Events (SSE):** Distributed real-time event broadcasting powered by Redis Pub/Sub (`/api/events/...`) with `Last-Event-ID` reconnect replay.
+
 ---
 
 ## 3. Data Flow & Security Boundaries
 
 ```
-[External Webhook / User Input]
-             |
-             v (Sanitization & Secret Masking)
-     [Untrusted Input Boundary]
-             |
-             +---> [Deterministic Parser & AST Engine]
-             |                 |
-             |                 v
-             +---> [Commit-Aware Vector Store / Cache]
-             |                 |
-             |                 v
-             +---> [Strict Context Builder (<untrusted_data>)]
-                               |
-                               v
-                     [LLM Provider API]
-                               |
-                               v
-                     [Citation & Diff Validator]
-                               |
-                               v
-                    [Human Approval Gate (for Writes)]
-                               |
-                               v
-                     [Verified Action Execution]
+[Browser / SSE Client]
+         |
+         | (HTTPS / SSE Streaming)
+         v
++-----------------------------------------------------------------------------------+
+|                              Stateless Gateway Layer                              |
+|   - Distributed Sliding-Window Rate Limiting (Redis)                             |
+|   - Session Authentication & RBAC Authorization (Cookie / Bearer)                |
+|   - OpenTelemetry Trace Creation (W3C traceparent)                               |
+|   - Cryptographic Webhook Verification (HMAC-SHA256)                             |
++-----------------------------------------------------------------------------------+
+         |                                                 |
+         v                                                 v
++-------------------+                             +-------------------+
+| GitHub App Token  |                             | BullMQ Queues     |
+| - RS256 JWT       |                             | - Webhooks        |
+| - Scoped Token    |                             | - Repositories    |
++-------------------+                             +-------------------+
+         |                                                 |
+         v                                                 v
++-------------------+                             +-------------------+
+| GitHub REST API   |                             | Background Worker |
++-------------------+                             | - Auth Re-check   |
+                                                  | - Redis Pub/Sub   |
+                                                  +-------------------+
+                                                           |
+                                                           v
+                                                  [SSE Event Bus]
 ```
 
 ---
 
 ## 4. Persistence & State Management
 
-- **Ephemeral Cache:** In-memory commit-keyed stores for AST graphs, vector chunks, and webhook jobs.
-- **Production Persistence Model (Recommended for Horizontal Scaling):**
-  - **Vector DB / PostgreSQL with pgvector:** For persistent cross-node chunk retrieval.
-  - **Redis / Key-Value Store:** For distributed rate-limiting, job locks, and webhook delivery idempotency across replicas.
-  - **Relational DB (Postgres/Prisma):** For persistent review audit logs, proposals, and user approval history.
+- **Ephemeral Cache:** In-memory commit-keyed stores for AST graphs, vector chunks, and webhook jobs with sub-millisecond access.
+- **Redis 7 Infrastructure:**
+  - Distributed Cache: Namespaced `devpilot:{env}:cache:repo:{repo}:{sha}:{resource}` with TTL and request coalescing.
+  - Rate Limiter: Namespaced `devpilot:{env}:ratelimit:{op}:{user}` with atomic increment and TTL reset.
+  - BullMQ Queues: `webhook-processing`, `repository-analysis`, `rag-indexing` with bounded retry and failure audit stores.
+  - Pub/Sub Event Bus: `devpilot:sse:{channel}` for cross-instance real-time progress broadcasting.
+- **Production PostgreSQL 16 + pgvector:**
+  - `users`: GitHub OAuth profile identity and global role.
+  - `sessions`: Ephemeral server-side session tokens with TTL and expiry tracking.
+  - `repository_memberships`: User-to-repository permissions and role mappings (`OWNER`, `MEMBER`, `VIEWER`).
+  - `github_installations`: Organization and user installation records, permissions, and metadata.
+  - `repositories` & `commits`: Ingested tree manifests, language metrics, and AST structures.
+  - `rag_chunks`: pgvector semantic embeddings with HNSW indexing.
+  - `security_findings` & `engineering_reports`: Audit records.
+  - `webhook_deliveries` & `agent_proposals`: State tracking and idempotency records.

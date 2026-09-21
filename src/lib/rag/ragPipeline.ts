@@ -48,7 +48,7 @@ export class CodebaseRAGPipeline {
       repoIndex = await ingestRepository({ fullName: repoFullName });
     }
 
-    const commitSha = repoIndex.repository?.defaultBranch || 'main';
+    const commitSha = (repoIndex as any).commitSha || repoIndex.repository?.defaultBranch || 'main';
 
     // 2. Check if already indexed for this exact commit
     const existingStatus = this.vectorStore.getIndexStatus(repoFullName, commitSha);
@@ -136,7 +136,7 @@ export class CodebaseRAGPipeline {
   ): Promise<QAResponse> {
     const startTime = Date.now();
     const { repositoryId, question, conversationHistory = [] } = request;
-    const commitSha = request.commitSha || repositoryIndex?.repository?.defaultBranch || this.vectorStore.findIndexedCommit(repositoryId) || 'main';
+    const commitSha = request.commitSha || (repositoryIndex as any)?.commitSha || repositoryIndex?.repository?.defaultBranch || this.vectorStore.findIndexedCommit(repositoryId) || 'main';
 
     // 1. Check if repository is indexed
     const indexStatus = this.vectorStore.getIndexStatus(repositoryId, commitSha);

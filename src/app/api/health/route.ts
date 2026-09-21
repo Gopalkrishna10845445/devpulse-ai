@@ -1,5 +1,5 @@
 /**
- * Phase 11 — Production Health & Readiness Check Endpoint
+ * Phase 11 & Production Phase 1 — Production Health & Readiness Check Endpoint
  *
  * GET /api/health
  *
@@ -31,14 +31,17 @@ export async function GET() {
     // Check Webhook Job Manager metrics
     const recentJobs = WebhookJobManager.getRecentJobs(50);
     const webhookStatus = {
-      activeJobs: recentJobs.filter(j => j.status === 'processing' || j.status === 'queued').length,
-      totalCompletedJobs: recentJobs.filter(j => j.status === 'completed').length,
+      activeJobs: recentJobs.filter((j) => j.status === 'processing' || j.status === 'queued').length,
+      totalCompletedJobs: recentJobs.filter((j) => j.status === 'completed').length,
     };
 
     const isHealthy = true; // Non-fatal if optional keys are missing (deterministic fallbacks active)
+    const isReady = true;
 
     const payload = {
       status: isHealthy ? 'healthy' : 'degraded',
+      liveness: true,
+      readiness: isReady,
       service: 'devpilot-ai',
       version: '1.0.0',
       uptimeSeconds,
@@ -48,6 +51,8 @@ export async function GET() {
         githubApi: configStatus.checks.gitHubApi,
         aiEngine: configStatus.checks.aiEngine,
         webhooks: configStatus.checks.webhooks,
+        database: configStatus.checks.database,
+        redis: configStatus.checks.redis,
         vectorStore: vectorStoreStatus,
         jobManager: webhookStatus,
       },

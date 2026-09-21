@@ -158,7 +158,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
     async function fetchRepoDetails() {
       try {
-        const [engRes, secRes] = await Promise.all([
+        const [engRes, secRes, codeRes] = await Promise.all([
           fetch('/api/repository/engineering', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -171,16 +171,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             body: JSON.stringify({ repositoryId: currentRepo }),
             signal: controller.signal,
           }),
+          fetch('/api/codebase/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName: currentRepo }),
+            signal: controller.signal,
+          }),
         ]);
 
-        const [engJson, secJson] = await Promise.all([
+        const [engJson, secJson, codeJson] = await Promise.all([
           engRes.json().catch(() => ({})),
           secRes.json().catch(() => ({})),
+          codeRes.json().catch(() => ({})),
         ]);
 
         if (isMounted) {
           const engReport = engJson?.report;
           const secReport = secJson?.report;
+          const intelligence = codeJson?.intelligence;
 
           const secFindings = secReport?.findings || [];
           const critCount = secFindings.filter((f: any) => f.severity === 'CRITICAL').length;
@@ -190,7 +198,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           const maintainability = engReport?.summary?.maintainabilityScore ?? 91;
           const cycles = engReport?.summary?.circularDependencyCycles?.length ?? 0;
           const hotspots = engReport?.summary?.hotspots?.length ?? 2;
-          const commitSha = engReport?.summary?.commitSha || secReport?.summary?.commitSha || 'a81c2d4';
+          const commitSha = engReport?.summary?.commitSha || secReport?.summary?.commitSha || intelligence?.repository?.commitSha || 'a81c2d4';
+
+          const detectedLangs = Array.from(
+            new Set((intelligence?.files || []).map((f: any) => f.language).filter(Boolean))
+          ) as string[];
+          const detectedFrameworks = intelligence?.architecture?.pattern ? [intelligence.architecture.pattern] : [];
+          const detectedDesc = intelligence?.repository?.description;
 
           const formattedFindings = secFindings.slice(0, 3).map((f: any, idx: number) => ({
             id: f.id || `sec-${idx}`,
@@ -204,6 +218,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           setData(prev => ({
             ...prev,
+            description: detectedDesc || prev.description,
+            languages: detectedLangs && detectedLangs.length > 0 ? detectedLangs : prev.languages,
+            frameworks: detectedFrameworks && detectedFrameworks.length > 0 ? detectedFrameworks : prev.frameworks,
             commitSha: commitSha.slice(0, 7),
             lastAnalyzed: 'Just now',
             healthScore: health,
@@ -213,7 +230,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             maintainabilityScore: maintainability,
             circularCycles: cycles,
             hotspotsCount: hotspots,
-            topFindings: formattedFindings.length > 0 ? formattedFindings : prev.topFindings,
+            topFindings: formattedFindings,
           }));
         }
       } catch (err: any) {
@@ -261,13 +278,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         }),
       ]);
 
-      const [engJson, secJson] = await Promise.all([
+      const [engJson, secJson, codeJson] = await Promise.all([
         engRes.json().catch(() => ({})),
         secRes.json().catch(() => ({})),
+        codeRes.json().catch(() => ({})),
       ]);
 
       const engReport = engJson?.report;
       const secReport = secJson?.report;
+      const intelligence = codeJson?.intelligence;
+
       const secFindings = secReport?.findings || [];
       const critCount = secFindings.filter((f: any) => f.severity === 'CRITICAL').length;
       const highCount = secFindings.filter((f: any) => f.severity === 'HIGH').length;
@@ -276,7 +296,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       const maintainability = engReport?.summary?.maintainabilityScore ?? 91;
       const cycles = engReport?.summary?.circularDependencyCycles?.length ?? 0;
       const hotspots = engReport?.summary?.hotspots?.length ?? 2;
-      const commitSha = engReport?.summary?.commitSha || secReport?.summary?.commitSha || 'a81c2d4';
+      const commitSha = engReport?.summary?.commitSha || secReport?.summary?.commitSha || intelligence?.repository?.commitSha || 'a81c2d4';
+
+      const detectedLangs = intelligence?.languages?.map((l: any) => l.name) || (intelligence?.topology?.primaryLanguage ? [intelligence.topology.primaryLanguage] : null);
+      const detectedFrameworks = intelligence?.frameworks?.map((f: any) => f.name);
+      const detectedDesc = intelligence?.repository?.description;
 
       const formattedFindings = secFindings.slice(0, 3).map((f: any, idx: number) => ({
         id: f.id || `sec-${idx}`,
@@ -290,6 +314,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
       setData(prev => ({
         ...prev,
+        description: detectedDesc || prev.description,
+        languages: detectedLangs && detectedLangs.length > 0 ? detectedLangs : prev.languages,
+        frameworks: detectedFrameworks && detectedFrameworks.length > 0 ? detectedFrameworks : prev.frameworks,
         commitSha: commitSha.slice(0, 7),
         lastAnalyzed: 'Just now',
         healthScore: health,
@@ -299,7 +326,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         maintainabilityScore: maintainability,
         circularCycles: cycles,
         hotspotsCount: hotspots,
-        topFindings: formattedFindings.length > 0 ? formattedFindings : prev.topFindings,
+        topFindings: formattedFindings,
       }));
 
       setAnalyzeState('done');
@@ -704,48 +731,56 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </button>
           </div>
 
-          <div className="space-y-2.5">
-            {data.topFindings.map((f) => (
-              <div
-                key={f.id}
-                className="p-3 rounded bg-surface-alt border border-border space-y-1.5 hover:border-text-muted transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
-                    f.severity === 'HIGH'
-                      ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
-                  }`}>
-                    {f.severity}
-                  </span>
-                  <span className="text-caption font-mono text-text-muted">{f.rule}</span>
-                </div>
+          {data.topFindings.length === 0 ? (
+            <div className="p-6 rounded bg-surface-alt border border-border text-center space-y-1">
+              <CheckCircle2 size={20} className="mx-auto text-semantic-green" />
+              <div className="text-body-sm font-medium text-text-primary">No High-Priority Findings</div>
+              <p className="text-caption text-text-muted">Repository security and codebase health are clean.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {data.topFindings.map((f) => (
+                <div
+                  key={f.id}
+                  className="p-3 rounded bg-surface-alt border border-border space-y-1.5 hover:border-text-muted transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
+                      f.severity === 'HIGH'
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
+                      {f.severity}
+                    </span>
+                    <span className="text-caption font-mono text-text-muted">{f.rule}</span>
+                  </div>
 
-                <div className="text-body-sm font-medium text-text-primary">
-                  {f.title}
-                </div>
+                  <div className="text-body-sm font-medium text-text-primary">
+                    {f.title}
+                  </div>
 
-                <div className="flex items-center gap-1.5 text-caption font-mono text-text-secondary">
-                  <FileCode size={12} className="text-text-muted" />
-                  <code>{f.filePath}:{f.line}</code>
-                </div>
+                  <div className="flex items-center gap-1.5 text-caption font-mono text-text-secondary">
+                    <FileCode size={12} className="text-text-muted" />
+                    <code>{f.filePath}:{f.line}</code>
+                  </div>
 
-                <p className="text-caption text-text-secondary leading-snug">
-                  {f.description}
-                </p>
+                  <p className="text-caption text-text-secondary leading-snug">
+                    {f.description}
+                  </p>
 
-                <div className="pt-1 flex items-center justify-between">
-                  <button
-                    onClick={() => onNavigateSection('security')}
-                    className="text-caption font-medium text-text-primary hover:underline flex items-center gap-1"
-                  >
-                    <span>Suggest fix</span>
-                    <ArrowRight size={12} />
-                  </button>
+                  <div className="pt-1 flex items-center justify-between">
+                    <button
+                      onClick={() => onNavigateSection('security')}
+                      className="text-caption font-medium text-text-primary hover:underline flex items-center gap-1"
+                    >
+                      <span>Suggest fix</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Codebase Structure Summary */}

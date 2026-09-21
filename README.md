@@ -16,17 +16,23 @@ DevPilot is an operating system and intelligence engine for modern software repo
 - **GitHub Webhook Engine (Phase 9):** Cryptographic signature verification (`X-Hub-Signature-256`), replay protection, and background event queueing.
 - **Autonomous Developer Agent (Phase 10):** ReAct / Plan-and-Solve multi-step execution with read-only defaults, strict budget limits (8 steps, 10 tools, 30s timeout), and proposal hash validation.
 - **Production Polish (Phase 11):** Structured secret-safe logging, health probes (`/api/health`), containerization, and end-to-end regression validation.
+- **Database Persistence & pgvector (Production Phase 1):** Durable PostgreSQL 16 + `pgvector` store with strict `(repository_id, commit_sha)` isolation and sub-millisecond in-memory caching.
+- **Authentication & RBAC Access Control (Production Phase 2):** Secure GitHub OAuth authentication, HTTP-only SameSite session cookies, user and repository membership persistence, centralized API middleware, and strict role-based access control (`OWNER`, `MEMBER`, `VIEWER`) with IDOR protection.
+- **Redis & BullMQ Distributed Background Queues (Production Phase 3):** Redis 7 distributed cache with request coalescing, atomic sliding-window rate limiting, and BullMQ background worker architecture for asynchronous webhooks and repository analysis.
+- **GitHub App & Real-Time Observability (Production Phase 4):** Scoped GitHub App installation token lifecycle, OpenTelemetry distributed tracing with W3C propagation, Prometheus metrics endpoint (`/api/metrics`), and Redis Pub/Sub backed Server-Sent Events (`/api/events/...`) for real-time progress.
+- **Production Hardening & CI/CD (Production Phase 5):** Multi-stage non-root Alpine Docker container, GitHub Actions CI/CD automation, dedicated `/api/health/live` and `/api/health/ready` probes, enterprise security headers, migration safety, backup/restore procedures, and comprehensive runbooks.
 
 ---
 
 ## Technology Stack
 
 - **Framework:** Next.js 14 (App Router), React 18
+- **Database:** PostgreSQL 16 with `pgvector` extension
 - **Language:** TypeScript 5.6
 - **Styling:** Tailwind CSS (Restrained Editorial Code-First Theme)
 - **Testing:** Vitest 2.1
 - **Icons & Visuals:** Lucide React, Recharts
-- **Containerization:** Docker (Node.js 20 Alpine Multi-Stage)
+- **Containerization:** Docker (Node.js 20 Alpine Multi-Stage) & `docker-compose.yml`
 
 ---
 
@@ -35,6 +41,7 @@ DevPilot is an operating system and intelligence engine for modern software repo
 ### 1. Prerequisites
 - Node.js 20.x LTS or higher
 - npm 10.x or higher
+- Docker 24.x+ (optional for local PostgreSQL + pgvector)
 
 ### 2. Environment Setup
 Copy `.env.example` to `.env.local`:
@@ -44,6 +51,9 @@ cp .env.example .env.local
 
 Configure your environment variables:
 ```env
+# PostgreSQL 16 + pgvector Database URL (Optional: defaults to in-memory fallback if unset)
+DATABASE_URL=postgresql://devpilot:devpilot_secret_password@localhost:5432/devpilot
+
 # GitHub Token (Optional but recommended — increases rate limit from 60 to 5000 req/hr)
 GITHUB_TOKEN=your_github_personal_access_token
 
@@ -58,7 +68,12 @@ GITHUB_WEBHOOK_SECRET=your_webhook_secret
 PORT=3005
 ```
 
-### 3. Install & Run
+### 3. (Optional) Start Local PostgreSQL with pgvector
+```bash
+docker compose up -d
+```
+
+### 4. Install & Run
 ```bash
 # Install dependencies
 npm install
@@ -83,10 +98,10 @@ The application will be accessible at `http://localhost:3005`.
 
 | Endpoint | Method | Purpose |
 | :--- | :--- | :--- |
-| `/api/health` | `GET` | Health and readiness check probe |
+| `/api/health` | `GET` | Health, database status, and readiness check probe |
 | `/api/repository/list` | `GET` | List repositories for a GitHub user |
 | `/api/repository/ingest` | `POST` | Ingest repository metadata and file tree |
-| `/api/repository/index` | `POST` | Index repository chunks for semantic RAG |
+| `/api/repository/index` | `POST` | Index repository chunks for semantic RAG (persists to pgvector) |
 | `/api/repository/ask` | `POST` | Grounded Codebase Q&A with verified citations |
 | `/api/codebase/analyze` | `POST` | AST symbol parsing & dependency graph analysis |
 | `/api/repository/engineering` | `POST` | Engineering health, layers & cycle detection |
@@ -97,28 +112,3 @@ The application will be accessible at `http://localhost:3005`.
 | `/api/github/webhook` | `POST` | Ingest and cryptographically verify GitHub webhooks |
 | `/api/agent/run` | `POST` | Execute autonomous developer agent plan |
 | `/api/agent/approve` | `POST` | Human-in-the-loop approval for agent write actions |
-
----
-
-## Security & Safety Guardrails
-
-- **Secret Redaction:** High-entropy tokens, API keys, and passwords are automatically masked before logging, vector embedding, or UI display.
-- **Untrusted Content Boundaries:** All repository code, comments, issues, and diffs are wrapped in `<untrusted_data>` prompt fences.
-- **Read-Only Defaults:** Agent and fix engines cannot modify repositories without explicit user authorization.
-- **Stale Commit Rejection:** Approvals against out-of-date commit SHAs are automatically rejected.
-- **Command Allowlist:** Subprocess execution is restricted to safe validation commands (`tsc`, `vitest`, `lint`, `build`).
-
----
-
-## Architecture & Documentation
-
-For detailed technical references:
-- **[Architecture Guide](docs/ARCHITECTURE.md):** System design, data flow diagrams, and subsystem breakdown.
-- **[Security Model](docs/SECURITY.md):** Defense-in-depth, prompt injection protection, and credential handling.
-- **[Production Runbook](docs/PRODUCTION_RUNBOOK.md):** Operations, health probes, smoke tests, troubleshooting, and rollback procedures.
-
----
-
-## License
-
-Private & Confidential — DevPilot Intelligence Platform.

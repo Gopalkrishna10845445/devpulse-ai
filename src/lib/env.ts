@@ -1,5 +1,5 @@
 /**
- * Phase 11 — Environment & Configuration Hardening
+ * Phase 11 & Production Phase 1 — Environment & Configuration Hardening
  *
  * Centralized, safe access to environment variables with validation,
  * type safety, and zero secret leakage.
@@ -13,6 +13,7 @@ export interface AppConfig {
   hasOpenAIKey: boolean;
   hasGenericAIKey: boolean;
   hasWebhookSecret: boolean;
+  hasDatabaseUrl: boolean;
   isLLMAvailable: boolean;
 }
 
@@ -31,6 +32,14 @@ export interface ConfigStatus {
     webhooks: {
       configured: boolean;
       signatureVerification: 'enforced' | 'unconfigured';
+    };
+    database: {
+      configured: boolean;
+      mode: 'postgresql+pgvector' | 'in-memory-fallback';
+    };
+    redis: {
+      configured: boolean;
+      mode: 'standalone' | 'in-memory-fallback';
     };
   };
 }
@@ -82,6 +91,19 @@ export class EnvironmentConfig {
     return process.env.GITHUB_WEBHOOK_SECRET?.trim() || undefined;
   }
 
+  public get databaseUrl(): string | undefined {
+    return (
+      process.env.DATABASE_URL?.trim() ||
+      process.env.POSTGRES_URL?.trim() ||
+      process.env.PG_CONNECTION_STRING?.trim() ||
+      undefined
+    );
+  }
+
+  public get redisUrl(): string | undefined {
+    return process.env.REDIS_URL?.trim() || undefined;
+  }
+
   public get isGitHubTokenConfigured(): boolean {
     return Boolean(this.gitHubToken && this.gitHubToken.length > 0);
   }
@@ -106,6 +128,14 @@ export class EnvironmentConfig {
     return Boolean(this.webhookSecret && this.webhookSecret.length > 0);
   }
 
+  public get isDatabaseConfigured(): boolean {
+    return Boolean(this.databaseUrl && this.databaseUrl.length > 0);
+  }
+
+  public get isRedisConfigured(): boolean {
+    return Boolean(this.redisUrl && this.redisUrl.length > 0);
+  }
+
   /**
    * Generates a safe status object suitable for health check endpoints and logs.
    * Discloses availability state without exposing keys or hashes.
@@ -114,6 +144,8 @@ export class EnvironmentConfig {
     const isGitHubConfigured = this.isGitHubTokenConfigured;
     const isLLM = this.isLLMAvailable;
     const isWebhookConfigured = this.isWebhookSecretConfigured;
+    const isDbConfigured = this.isDatabaseConfigured;
+    const isRedis = this.isRedisConfigured;
 
     let aiProvider: 'google-gemini' | 'openai' | 'generic' | 'deterministic-fallback' = 'deterministic-fallback';
     if (this.isGeminiConfigured) aiProvider = 'google-gemini';
@@ -135,6 +167,14 @@ export class EnvironmentConfig {
         webhooks: {
           configured: isWebhookConfigured,
           signatureVerification: isWebhookConfigured ? 'enforced' : 'unconfigured',
+        },
+        database: {
+          configured: isDbConfigured,
+          mode: isDbConfigured ? 'postgresql+pgvector' : 'in-memory-fallback',
+        },
+        redis: {
+          configured: isRedis,
+          mode: isRedis ? 'standalone' : 'in-memory-fallback',
         },
       },
     };

@@ -1,5 +1,5 @@
 /**
- * Phase 4 — Codebase Grounded Q&A API Route
+ * Phase 4 & Production Phase 2 — Codebase Grounded Q&A API Route
  *
  * POST /api/repository/ask
  * Body: { repositoryId: string, commitSha?: string, question: string, conversationHistory?: ConversationMessage[], preloadedIndex?: RepositoryIndex, preloadedIntelligence?: CodebaseIntelligence }
@@ -7,11 +7,14 @@
 
 import { NextResponse } from 'next/server';
 import { globalRAGPipeline } from '@/lib/rag/ragPipeline';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json().catch(() => ({}));
     const { repositoryId, commitSha, question, conversationHistory, preloadedIndex, preloadedIntelligence } = body;
 
@@ -36,6 +39,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Repository Authorization Check with IDOR defense
+    const authRes = await authorizeRepositoryAccess(user, repositoryId, 'qa');
+    if (!authRes.authorized) {
+      return NextResponse.json(
+        { error: authRes.reason || 'Access denied to repository.' },
+        { status: 403 }
+      );
+    }
+
     const response = await globalRAGPipeline.askQuestion(
       {
         repositoryId: repositoryId.trim(),
@@ -49,6 +61,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
+    if (error.statusCode) {
+      return createAuthErrorResponse(error);
+    }
     console.error('[API /api/repository/ask] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process question.' },

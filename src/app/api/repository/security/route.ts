@@ -1,25 +1,21 @@
 /**
- * Phase 6 — Security Intelligence API Route
+ * Phase 6 & Production Phase 2 — Security Intelligence API Route
  *
  * POST /api/repository/security
- * Body: {
- *   repositoryId: string,
- *   commitSha?: string,
- *   preloadedIndex?: RepositoryIndex,
- *   preloadedIntelligence?: CodebaseIntelligence,
- *   vulnerabilityOptions?: VulnerabilityScanOptions
- * }
  */
 
 import { NextResponse } from 'next/server';
 import { analyzeCodebase } from '@/lib/intelligence/codebaseAnalyzer';
 import { ingestRepository } from '@/lib/repository/repositoryIngestor';
 import { analyzeSecurityHealth } from '@/lib/security/securityEngine';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json().catch(() => ({}));
     const {
       repositoryId,
@@ -37,6 +33,15 @@ export async function POST(req: Request) {
     }
 
     const trimmedRepoId = repositoryId.trim();
+
+    // Repository Authorization Check with IDOR defense
+    const authRes = await authorizeRepositoryAccess(user, trimmedRepoId, 'security');
+    if (!authRes.authorized) {
+      return NextResponse.json(
+        { error: authRes.reason || 'Access denied to repository.' },
+        { status: 403 }
+      );
+    }
 
     // 1. Ingest / load repository index
     let repoIndex = preloadedIndex;
@@ -67,7 +72,6 @@ export async function POST(req: Request) {
           index: repoIndex,
         });
       } catch {
-        // Non-blocking: security engine can operate on repoIndex even if AST intelligence fails partially
         intelligence = null;
       }
     }
@@ -87,6 +91,9 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error: any) {
+    if (error.statusCode) {
+      return createAuthErrorResponse(error);
+    }
     console.error('[API /api/repository/security] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate security health report.' },
