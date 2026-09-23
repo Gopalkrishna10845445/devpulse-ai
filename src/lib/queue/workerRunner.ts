@@ -122,3 +122,6 @@ export class WorkerRunner {
     process.once('SIGINT', () => handleSignal('SIGINT'));
   }
 }
+
+// Entry point: invoked when this file is executed directly via `npx tsx src/lib/queue/workerRunner.ts`
+WorkerRunner.startWorkers();
