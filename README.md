@@ -1,74 +1,172 @@
-# DevPilot — AI-Powered Developer & Codebase Intelligence Platform
+# DevPilot
 
-DevPilot is an operating system and intelligence engine for modern software repositories. It unifies AST-level codebase analysis, commit-aware semantic RAG, deterministic engineering and security audits, automated pull request review, webhook event pipelines, and a bounded autonomous developer agent under a unified, high-assurance architecture.
+**DevPilot** is an enterprise-grade AI developer intelligence platform that performs deep static code analysis, semantic codebase Q&A (RAG), automated pull request reviews, engineering health metrics, security vulnerability audits, and bounded autonomous agent orchestration on real GitHub repositories.
 
 ---
 
-## Key Capabilities
+## Overview
 
-- **Repository Ingestion & Indexing (Phases 1–2):** Fetches repository trees, applies strict size bounds, detects languages and architectural frameworks, and generates commit-aware structural indexes.
-- **Codebase Intelligence & Symbol Graphs (Phase 3):** Parses symbols (functions, classes, interfaces, types) across TypeScript, JavaScript, Python, and Go, builds import dependency graphs, and classifies architectural topology.
-- **Grounded Codebase RAG & Q&A (Phase 4):** Semantic chunking with vector retrieval and verified line-range citations (`file:start-end`), rejecting unsubstantiated claims.
-- **Engineering Intelligence (Phase 5):** Evaluates circular dependencies (Tarjan's cycle detection), architectural layer violations, maintainability indices, and blast radii.
-- **Security Intelligence & Zero-Leak Redaction (Phase 6):** 6-layer vulnerability and secret scanner (high-entropy tokens, cloud credentials, injection flaws, auth misconfigurations) with automatic masking.
-- **AI Code Fix Engine (Phase 7):** Generates unified diff patches for detected vulnerabilities with SHA-256 diff hash validation and human approval gates.
-- **Pull Request Review Automation (Phase 8):** Analyzes unified PR diffs, maps touched symbols, evaluates blast radius, and flags breaking changes and security risks.
-- **GitHub Webhook Engine (Phase 9):** Cryptographic signature verification (`X-Hub-Signature-256`), replay protection, and background event queueing.
-- **Autonomous Developer Agent (Phase 10):** ReAct / Plan-and-Solve multi-step execution with read-only defaults, strict budget limits (8 steps, 10 tools, 30s timeout), and proposal hash validation.
-- **Production Polish (Phase 11):** Structured secret-safe logging, health probes (`/api/health`), containerization, and end-to-end regression validation.
-- **Database Persistence & pgvector (Production Phase 1):** Durable PostgreSQL 16 + `pgvector` store with strict `(repository_id, commit_sha)` isolation and sub-millisecond in-memory caching.
-- **Authentication & RBAC Access Control (Production Phase 2):** Secure GitHub OAuth authentication, HTTP-only SameSite session cookies, user and repository membership persistence, centralized API middleware, and strict role-based access control (`OWNER`, `MEMBER`, `VIEWER`) with IDOR protection.
-- **Redis & BullMQ Distributed Background Queues (Production Phase 3):** Redis 7 distributed cache with request coalescing, atomic sliding-window rate limiting, and BullMQ background worker architecture for asynchronous webhooks and repository analysis.
-- **GitHub App & Real-Time Observability (Production Phase 4):** Scoped GitHub App installation token lifecycle, OpenTelemetry distributed tracing with W3C propagation, Prometheus metrics endpoint (`/api/metrics`), and Redis Pub/Sub backed Server-Sent Events (`/api/events/...`) for real-time progress.
-- **Production Hardening & CI/CD (Production Phase 5):** Multi-stage non-root Alpine Docker container, GitHub Actions CI/CD automation, dedicated `/api/health/live` and `/api/health/ready` probes, enterprise security headers, migration safety, backup/restore procedures, and comprehensive runbooks.
+Modern software engineering teams manage rapidly expanding codebases with complex dependency trees, hidden security vulnerabilities, and architectural drift. DevPilot acts as an intelligent repository co-pilot and automated code reviewer. It ingests software repositories, extracts structural AST symbol graphs, performs commit-aware vector search, evaluates maintainability and security posture, generates reviewable fix proposals with unified diffs, and executes goal-oriented agent workflows—all while enforcing strict human approval gates for write actions.
+
+---
+
+## Core Features
+
+- **Repository Ingestion & Indexing:** Ingests repository file trees from GitHub REST APIs or local sources with strict bounds (2,000 files, 256 KB/file), language byte-weighting, and framework detection.
+- **Codebase Intelligence & Symbol Graphs:** Multi-language AST parser (TypeScript, JavaScript, Python, Go) extracting functions, classes, interfaces, types, and import relationships.
+- **Codebase RAG / Q&A:** Commit-aware hybrid vector retrieval using PostgreSQL `pgvector` with BM25 lexical reranking and verified line-range citations (`file:start-end`).
+- **Engineering Intelligence:** Deterministic maintainability index, god-file hotspot identification, Tarjan's cycle detection for circular dependencies, and architectural layer boundary auditing.
+- **Security Intelligence:** 6-layer static security scanner detecting high-entropy secrets, committed credential files, unsafe code patterns (SQLi, eval, SSRF), auth gaps, and dependency vulnerabilities.
+- **Pull Request Review Engine:** Automated PR review computing modified symbol mappings, blast radius scorecards, test gap indicators, and regression risks.
+- **AI Fix / Refactor System:** Generates minimal git unified diff patches with cryptographic SHA-256 diff hash validation and strict human review gates.
+- **GitHub Webhooks & Event Automation:** HMAC-SHA256 signature verification, X-GitHub-Delivery GUID replay deduplication, and BullMQ background queue processing.
+- **DevPilot Agent Orchestration:** Bounded 7-mode developer agent (`INVESTIGATE`, `EXPLAIN`, `REVIEW`, `SECURITY`, `ENGINEERING`, `FIX`, `SUMMARIZE`) with typed tool registry, 8-step budget limits, and prompt injection defense.
+
+---
+
+## Architecture
+
+### Intelligence Data Flow
+
+```mermaid
+flowchart TD
+    GH[GitHub API / Webhooks] --> ING[Repository Ingestion]
+    ING --> AST[Codebase Intelligence & AST Parser]
+    AST --> RAG[RAG & pgvector Store]
+    AST --> ENG[Engineering Intelligence]
+    AST --> SEC[Security Intelligence]
+    
+    ENG --> PR[PR Review Engine]
+    SEC --> PR
+    
+    ENG --> FIX[AI Fix & Refactor Engine]
+    SEC --> FIX
+    
+    RAG --> AGENT[DevPilot Autonomous Agent]
+    PR --> AGENT
+    FIX --> AGENT
+    
+    AGENT --> APP[Human Approval Gate]
+    APP --> APPLIED[Safe Patch Execution]
+```
+
+### Infrastructure Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client [Frontend Layer]
+        UI[Next.js 14 / React 18 UI]
+    end
+
+    subgraph API [API & Gateway Layer]
+        AUTH[Auth / RBAC Middleware]
+        GW[API Route Handlers]
+    end
+
+    subgraph Storage [Persistence Layer]
+        PG[(PostgreSQL 16 + pgvector)]
+        REDIS[(Redis 7 / BullMQ)]
+    end
+
+    subgraph AI [AI & Analysis Layer]
+        LLM[Gemini 1.5 / OpenAI]
+        AST_ENGINE[Local Deterministic AST Engine]
+    end
+
+    UI --> AUTH --> GW
+    GW --> PG
+    GW --> REDIS
+    GW --> LLM
+    GW --> AST_ENGINE
+```
 
 ---
 
 ## Technology Stack
 
-- **Framework:** Next.js 14 (App Router), React 18
-- **Database:** PostgreSQL 16 with `pgvector` extension
-- **Language:** TypeScript 5.6
-- **Styling:** Tailwind CSS (Restrained Editorial Code-First Theme)
-- **Testing:** Vitest 2.1
-- **Icons & Visuals:** Lucide React, Recharts
-- **Containerization:** Docker (Node.js 20 Alpine Multi-Stage) & `docker-compose.yml`
+- **Frontend & App Framework:** Next.js 14 (App Router), React 18, TypeScript 5.6
+- **Styling & UI:** Tailwind CSS, Lucide React, Recharts
+- **Database & Vectors:** PostgreSQL 16, `pgvector` extension
+- **Caching & Queues:** Redis 7, BullMQ
+- **Authentication:** GitHub OAuth 2.0, HTTP-Only SameSite Session Cookies, RBAC Middleware
+- **AI Providers:** Google Gemini 1.5 Pro / Flash, OpenAI GPT-4o, Local Deterministic AST Synthesizer
+- **Testing:** Vitest 2.1 (88 test suites, 615 passing tests)
+- **Containerization & Deployment:** Docker (Node.js 20 Alpine Multi-stage), Render Web Service, GitHub Actions CI/CD
 
 ---
 
-## Getting Started
+## Security
+
+- **Authentication & RBAC:** GitHub OAuth 2.0 with state validation, session cookies, and repository-level roles (`OWNER`, `MEMBER`, `VIEWER`).
+- **IDOR Protection:** Every protected API route validates user identity and repository membership before data access.
+- **Webhook Verification:** Cryptographic HMAC-SHA256 signature verification (`X-Hub-Signature-256`) with replay attack deduplication.
+- **Zero-Leak Secret Redaction:** Centralized secret masking (`maskTextSecrets`) redacts GitHub tokens, AWS keys, database credentials, and API keys across logs, traces, and UI payloads.
+- **Human-in-the-Loop Approval Gates:** Write operations and code mutations (`apply_fix`) strictly require explicit human confirmation with SHA-256 diff hash matching.
+
+---
+
+## AI Safety & Grounding
+
+- **Repository Content as Untrusted Data:** All repository source code, READMEs, PR bodies, and commit messages are wrapped in untrusted data boundaries to eliminate prompt injection risks.
+- **Grounded Citations:** RAG answers require verifiable file paths, line ranges, and symbol names. Unsubstantiated claims are rejected.
+- **Deterministic Baseline:** Full architectural, engineering, and security analysis remains functional even when third-party AI APIs are unavailable or rate-limited.
+
+---
+
+## Screenshots
+
+| Codebase Intelligence & Topology | Grounded RAG & Codebase Q&A |
+| :---: | :---: |
+| ![Codebase Intelligence](/docs/screenshots/codebase_intelligence.png) | ![Grounded RAG](/docs/screenshots/rag_qa.png) |
+
+| Engineering & Security Health | PR Review & Impact Blast Radius |
+| :---: | :---: |
+| ![Security & Engineering](/docs/screenshots/security_health.png) | ![PR Review](/docs/screenshots/pr_review.png) |
+
+---
+
+## Local Development
 
 ### 1. Prerequisites
 - Node.js 20.x LTS or higher
 - npm 10.x or higher
-- Docker 24.x+ (optional for local PostgreSQL + pgvector)
+- Docker 24.x+ (optional for local PostgreSQL + Redis)
 
 ### 2. Environment Setup
-Copy `.env.example` to `.env.local`:
+Clone the repository and copy the environment template:
 ```bash
+git clone https://github.com/Gopalkrishna10845445/devpulse-ai.git
+cd devpulse-ai
 cp .env.example .env.local
 ```
 
-Configure your environment variables:
+Configure your environment variables in `.env.local`:
 ```env
-# PostgreSQL 16 + pgvector Database URL (Optional: defaults to in-memory fallback if unset)
-DATABASE_URL=postgresql://devpilot:devpilot_secret_password@localhost:5432/devpilot
+# PostgreSQL 16 + pgvector Database URL (Optional: in-memory fallback active if unset)
+DATABASE_URL=postgresql://devpilot:devpilot_secret@localhost:5432/devpilot
 
-# GitHub Token (Optional but recommended — increases rate limit from 60 to 5000 req/hr)
-GITHUB_TOKEN=your_github_personal_access_token
+# Redis URL (Optional: in-memory fallback active if unset)
+REDIS_URL=redis://localhost:6379
 
-# AI Provider API Key (Optional — fallback to local deterministic synthesizer if unset)
-GEMINI_API_KEY=your_gemini_api_key
-# or OPENAI_API_KEY=your_openai_api_key
+# GitHub Token (Optional: increases rate limit from 60 to 5,000 req/hr)
+GITHUB_TOKEN=your_github_token_here
 
-# GitHub Webhooks (Required for verifying incoming webhooks)
-GITHUB_WEBHOOK_SECRET=your_webhook_secret
+# GitHub OAuth App Credentials
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_OAUTH_REDIRECT_URI=http://localhost:3005/api/auth/callback
 
-# Port (Default: 3005)
+# Webhook Secret (Required for webhook signature verification)
+GITHUB_WEBHOOK_SECRET=your_webhook_secret_here
+
+# AI Provider Key (Optional: deterministic AST engine functions without AI keys)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Application Port
 PORT=3005
 ```
 
-### 3. (Optional) Start Local PostgreSQL with pgvector
+### 3. Start Local PostgreSQL & Redis (Optional)
 ```bash
 docker compose up -d
 ```
@@ -78,37 +176,73 @@ docker compose up -d
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
-
-# Run automated tests
+# Run automated test suites
 npm test
 
-# Build production bundle
-npm run build
-
-# Start production server
-npm start
+# Start Next.js development server
+npm run dev
 ```
-The application will be accessible at `http://localhost:3005`.
+Open [http://localhost:3005](http://localhost:3005) in your browser.
 
 ---
 
-## API Routes & Endpoints
+## Environment Variables Reference
 
-| Endpoint | Method | Purpose |
+| Variable | Required | Description |
 | :--- | :--- | :--- |
-| `/api/health` | `GET` | Health, database status, and readiness check probe |
-| `/api/repository/list` | `GET` | List repositories for a GitHub user |
-| `/api/repository/ingest` | `POST` | Ingest repository metadata and file tree |
-| `/api/repository/index` | `POST` | Index repository chunks for semantic RAG (persists to pgvector) |
-| `/api/repository/ask` | `POST` | Grounded Codebase Q&A with verified citations |
-| `/api/codebase/analyze` | `POST` | AST symbol parsing & dependency graph analysis |
-| `/api/repository/engineering` | `POST` | Engineering health, layers & cycle detection |
-| `/api/repository/security` | `POST` | 6-layer security and secret scan |
-| `/api/repository/fix` | `POST` | Propose AI code fix patch |
-| `/api/repository/fix/apply` | `POST` | Review and apply code fix patch with human confirmation |
-| `/api/github/pull-request/review` | `POST` | Review PR diff, map affected symbols, and calculate blast radius |
-| `/api/github/webhook` | `POST` | Ingest and cryptographically verify GitHub webhooks |
-| `/api/agent/run` | `POST` | Execute autonomous developer agent plan |
-| `/api/agent/approve` | `POST` | Human-in-the-loop approval for agent write actions |
+| `DATABASE_URL` | Optional | PostgreSQL 16 connection string with pgvector enabled |
+| `REDIS_URL` | Optional | Redis 7 connection string for distributed caching & BullMQ |
+| `GITHUB_TOKEN` | Optional | Personal access token or GitHub App token (5,000 req/hr) |
+| `GITHUB_CLIENT_ID` | Required for OAuth | GitHub OAuth Application Client ID |
+| `GITHUB_CLIENT_SECRET` | Required for OAuth | GitHub OAuth Application Client Secret |
+| `GITHUB_OAUTH_REDIRECT_URI` | Required for OAuth | OAuth callback URL (e.g. `http://localhost:3005/api/auth/callback`) |
+| `GITHUB_WEBHOOK_SECRET` | Optional | Secret key for validating incoming GitHub webhook payloads |
+| `GEMINI_API_KEY` | Optional | Google Gemini API key for semantic reasoning |
+| `OPENAI_API_KEY` | Optional | OpenAI API key (alternative LLM provider) |
+| `PORT` | Optional | Server port (Default: `3005`) |
+
+---
+
+## Testing & Verification
+
+DevPilot features a 100% passing test baseline across 88 comprehensive test suites:
+```bash
+# Run Vitest test suites
+npm test -- --run
+
+# Run TypeScript typecheck
+npx tsc --noEmit
+
+# Build production bundle
+npm run build
+```
+- **Test Suites:** 88 passed
+- **Tests:** 615 passed
+- **TypeScript:** 0 type errors
+- **Production Build:** Next.js optimized production bundle passed
+
+---
+
+## Deployment
+
+### Docker Deployment
+Build and run the production multi-stage container:
+```bash
+docker build -t devpilot:latest .
+docker run -p 3005:3005 --env-file .env.local devpilot:latest
+```
+
+### Render Deployment
+DevPilot includes native Render Web Service support:
+1. Connect GitHub repository to Render.
+2. Select **Web Service** with Node.js runtime.
+3. Build Command: `npm run build`
+4. Start Command: `npm start`
+5. Configure environment variables in the Render dashboard.
+
+---
+
+## Known Limitations
+
+- **Render Free Tier Cold Starts:** When deployed on Render Free instances, the service spins down after inactivity, causing a brief cold-start latency on the first request.
+- **GitHub Unauthenticated Rate Limits:** If `GITHUB_TOKEN` is not configured, public repository analysis is subject to GitHub's unauthenticated IP rate limit of 60 requests/hour. Configuring a token raises this limit to 5,000 requests/hour.
