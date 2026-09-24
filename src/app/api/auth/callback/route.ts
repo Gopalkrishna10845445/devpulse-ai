@@ -15,6 +15,18 @@ import { Logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+
+  let fallbackOrigin = request.nextUrl.origin;
+  if (process.env.GITHUB_OAUTH_REDIRECT_URI) {
+    try {
+      fallbackOrigin = new URL(process.env.GITHUB_OAUTH_REDIRECT_URI).origin;
+    } catch {}
+  }
+
+  const origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : fallbackOrigin;
+
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
@@ -22,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     Logger.warn('GitHub OAuth provider returned error', { errorCategory: 'AUTH_ERROR', error });
-    return NextResponse.redirect(new URL('/?auth_error=oauth_denied', request.url));
+    return NextResponse.redirect(new URL('/?auth_error=oauth_denied', origin));
   }
 
   if (!code) {
@@ -61,7 +73,7 @@ export async function GET(request: NextRequest) {
     const session = await SessionManager.createSession(user.id);
 
     // 5. Build response and set secure HTTP-only session cookie
-    const redirectUrl = new URL('/', request.url);
+    const redirectUrl = new URL('/', origin);
     const response = NextResponse.redirect(redirectUrl);
 
     response.cookies.set(SESSION_COOKIE_NAME, session.sessionId, {
@@ -78,6 +90,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err: any) {
     Logger.error('OAuth callback failure', { errorCategory: 'AUTH_ERROR' }, err);
-    return NextResponse.redirect(new URL('/?auth_error=callback_failed', request.url));
+    return NextResponse.redirect(new URL('/?auth_error=callback_failed', origin));
   }
 }
