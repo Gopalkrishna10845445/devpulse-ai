@@ -296,7 +296,83 @@ export class CodeFixGenerator {
       };
     }
 
-    // 6. Generic Default Remediation
+    // 6. SQL Query Interpolation Remediation
+    if (rule === 'RULE_CODE_SQL_INTERPOLATION' || targetLine.includes('SELECT') || targetLine.includes('INSERT')) {
+      const beforeCode = targetLine;
+      const afterCode = targetLine.replace(/\$\{[^}]+\}/, '$1');
+
+      return {
+        title: `Parameterize SQL query in ${context.targetFile}`,
+        explanation: `Converted SQL string interpolation into parameterized bind variables to eliminate SQL injection vectors.`,
+        rationale: `Using parameterized queries ensures user parameters are treated strictly as data rather than executable SQL logic.`,
+        affectedSymbols: context.targetSymbol ? [context.targetSymbol] : [],
+        beforeCode,
+        afterCode,
+        validationPlan: [
+          { type: 'test' as const, command: 'npm test', description: 'Run database query unit tests', status: 'suggested' as const },
+        ],
+        warnings: ['Ensure database client query method receives parameter array matching placeholder indices.'],
+      };
+    }
+
+    // 7. Unsafe HTML Rendering (XSS) Remediation
+    if (rule === 'RULE_CODE_UNSAFE_HTML_INJECTION' || targetLine.includes('dangerouslySetInnerHTML')) {
+      const beforeCode = targetLine;
+      const afterCode = targetLine.replace(/dangerouslySetInnerHTML\s*=\s*\{\s*\{\s*__html\s*:\s*([^}]+)\s*\}\s*\}/, '>{$1}<');
+
+      return {
+        title: `Sanitize unsafe HTML rendering in ${context.targetFile}`,
+        explanation: `Replaced raw dangerouslySetInnerHTML with safe React text binding to prevent Cross-Site Scripting (XSS).`,
+        rationale: `Directly rendering unescaped HTML allows malicious scripts embedded in content to execute in client browsers.`,
+        affectedSymbols: context.targetSymbol ? [context.targetSymbol] : [],
+        beforeCode,
+        afterCode,
+        validationPlan: [
+          { type: 'test' as const, command: 'npm test', description: 'Run component rendering tests', status: 'suggested' as const },
+        ],
+        warnings: ['If rich HTML formatting is required, pass content through DOMPurify.sanitize() before rendering.'],
+      };
+    }
+
+    // 8. Insecure Cookie Remediation
+    if (rule === 'RULE_CONFIG_INSECURE_COOKIE' || targetLine.includes('httpOnly: false')) {
+      const beforeCode = targetLine;
+      const afterCode = targetLine.replace(/httpOnly\s*:\s*false/i, 'httpOnly: true').replace(/secure\s*:\s*false/i, 'secure: true');
+
+      return {
+        title: `Enforce secure cookie flags in ${context.targetFile}`,
+        explanation: `Configured httpOnly: true and secure: true on authentication cookies to mitigate XSS cookie theft and packet sniffing.`,
+        rationale: `httpOnly prevents client-side scripts from reading session cookies; secure enforces TLS transport.`,
+        affectedSymbols: context.targetSymbol ? [context.targetSymbol] : [],
+        beforeCode,
+        afterCode,
+        validationPlan: [
+          { type: 'test' as const, command: 'npm test', description: 'Run authentication session tests', status: 'suggested' as const },
+        ],
+        warnings: [],
+      };
+    }
+
+    // 9. Missing Auth Guard Remediation
+    if (rule === 'RULE_AUTH_NO_DETECTABLE_GUARD' || request.findingTitle?.includes('authentication guard')) {
+      const beforeCode = targetLine;
+      const afterCode = `const user = await requireAuth(req);\n${targetLine}`;
+
+      return {
+        title: `Add authentication guard to ${context.targetFile}`,
+        explanation: `Injected requireAuth() session verification check before handler logic to ensure only authenticated users can access the endpoint.`,
+        rationale: `Endpoints handling mutations or sensitive data must enforce authentication boundaries.`,
+        affectedSymbols: context.targetSymbol ? [context.targetSymbol] : [],
+        beforeCode,
+        afterCode,
+        validationPlan: [
+          { type: 'test' as const, command: 'npm test', description: 'Run route authorization tests', status: 'suggested' as const },
+        ],
+        warnings: ['Ensure route handler receives the incoming Request object.'],
+      };
+    }
+
+    // 10. Generic Default Remediation
     const beforeCode = targetLine || 'const x = 1;';
     const afterCode = `// DevPilot Remediation: Applied safe guard\n${targetLine}`;
 

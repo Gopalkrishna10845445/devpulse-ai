@@ -18,11 +18,14 @@ import { NextResponse } from 'next/server';
 import { globalFixEngine } from '@/lib/fixes/fixEngine';
 import { ApplyFixRequest } from '@/lib/fixes/types';
 import { ingestRepository } from '@/lib/repository/repositoryIngestor';
+import { requireAuth, authorizeRepositoryAccess, createAuthErrorResponse } from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const user = await requireAuth(req);
+
     const body = await req.json().catch(() => ({}));
     const {
       proposalId,
@@ -42,6 +45,20 @@ export async function POST(req: Request) {
       );
     }
 
+    const existingProposal = globalFixEngine.getProposal(proposalId);
+    const targetRepo = repositoryId || existingProposal?.repositoryId;
+
+    if (targetRepo) {
+      const requiredPermission = 'approve_fix';
+      const authRes = await authorizeRepositoryAccess(user, targetRepo, requiredPermission);
+      if (!authRes.authorized) {
+        return NextResponse.json(
+          { error: authRes.reason || 'Access denied to repository fix.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Handle Review Actions (approve / reject)
     if (action === 'approve' || action === 'reject') {
       const updated = await globalFixEngine.reviewFix(proposalId, action, rejectionReason);
@@ -53,7 +70,7 @@ export async function POST(req: Request) {
     }
 
     // Handle Apply Action
-    if (!repositoryId || !commitSha || !expectedDiffHash) {
+    if (!targetRepo || !commitSha || !expectedDiffHash) {
       return NextResponse.json(
         { error: 'repositoryId, commitSha, and expectedDiffHash are required to apply a fix.' },
         { status: 400 }
@@ -72,7 +89,7 @@ export async function POST(req: Request) {
     if (!repoIndex) {
       try {
         repoIndex = await ingestRepository({
-          fullName: repositoryId.includes('/') ? repositoryId : undefined,
+          fullName: targetRepo.includes('/') ? targetRepo : undefined,
           branch: commitSha,
         });
       } catch (err: any) {
@@ -85,7 +102,7 @@ export async function POST(req: Request) {
 
     const applyReq: ApplyFixRequest = {
       proposalId,
-      repositoryId,
+      repositoryId: targetRepo,
       commitSha,
       expectedDiffHash,
       confirmedByUser,
@@ -95,6 +112,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
+    if (error.statusCode) {
+      return createAuthErrorResponse(error);
+    }
     console.error('[API /api/repository/fix/apply] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to apply code fix proposal.' },

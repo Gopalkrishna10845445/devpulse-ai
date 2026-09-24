@@ -9,6 +9,7 @@ import { db } from './client';
 import { VectorRecord, IndexStatus, CodeChunk } from '../rag/types';
 import { WebhookDeliveryRecord } from '../webhook/types';
 import { CodeFixProposal } from '../fixes/types';
+import { Logger } from '../logger';
 
 // ─── 1. RAG & pgvector Store ──────────────────────────────────────────────────
 
@@ -229,30 +230,53 @@ export class FixDatabaseRepository {
     const isLive = await db.isAvailable();
     if (!isLive) return;
 
-    await db.query(
-      `INSERT INTO fix_proposals (
-        id, repository_id, commit_sha, finding_id, file_path, title,
-        description, patch, patch_hash, status, rejection_reason, warnings, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        status = $10,
-        rejection_reason = $11,
-        updated_at = NOW()`,
-      [
-        proposal.id,
-        proposal.repositoryId,
-        proposal.commitSha,
-        proposal.findingId,
-        proposal.targetFile,
-        proposal.title || null,
-        proposal.explanation || null,
-        proposal.unifiedDiff,
-        proposal.diffHash,
-        proposal.status,
-        proposal.rejectionReason || null,
-        JSON.stringify(proposal.warnings || []),
-      ]
-    );
+    try {
+      const cleanRepoId = proposal.repositoryId.toLowerCase().trim();
+      const cleanCommitSha = (proposal.commitSha || 'main').trim();
+
+      await db.transaction(async (client) => {
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name)
+           VALUES ($1, $1, $2, $3)
+           ON CONFLICT (id) DO NOTHING`,
+          [cleanRepoId, cleanRepoId.split('/')[0] || cleanRepoId, cleanRepoId.split('/')[1] || cleanRepoId]
+        );
+
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, indexed_at, chunks_count)
+           VALUES ($1, $2, NOW(), 0)
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [cleanRepoId, cleanCommitSha]
+        );
+
+        await client.query(
+          `INSERT INTO fix_proposals (
+            id, repository_id, commit_sha, finding_id, file_path, title,
+            description, patch, patch_hash, status, rejection_reason, warnings, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            status = $10,
+            rejection_reason = $11,
+            updated_at = NOW()`,
+          [
+            proposal.id,
+            cleanRepoId,
+            cleanCommitSha,
+            proposal.findingId,
+            proposal.targetFile,
+            proposal.title || null,
+            proposal.explanation || null,
+            proposal.unifiedDiff,
+            proposal.diffHash,
+            proposal.status,
+            proposal.rejectionReason || null,
+            JSON.stringify(proposal.warnings || []),
+          ]
+        );
+      });
+    } catch (err) {
+      Logger.warn('Failed to persist fix proposal in PostgreSQL', { proposalId: proposal.id }, err);
+    }
   }
 
   /**
@@ -311,12 +335,35 @@ export class FixDatabaseRepository {
     const isLive = await db.isAvailable();
     if (!isLive) return;
 
-    await db.query(
-      `INSERT INTO approval_records (
-        action_id, repository_id, commit_sha, action_type, status, diff_hash, executed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-      [actionId, repositoryId, commitSha, actionType, status, diffHash]
-    );
+    try {
+      const cleanRepoId = repositoryId.toLowerCase().trim();
+      const cleanCommitSha = (commitSha || 'main').trim();
+
+      await db.transaction(async (client) => {
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name)
+           VALUES ($1, $1, $2, $3)
+           ON CONFLICT (id) DO NOTHING`,
+          [cleanRepoId, cleanRepoId.split('/')[0] || cleanRepoId, cleanRepoId.split('/')[1] || cleanRepoId]
+        );
+
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, indexed_at, chunks_count)
+           VALUES ($1, $2, NOW(), 0)
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [cleanRepoId, cleanCommitSha]
+        );
+
+        await client.query(
+          `INSERT INTO approval_records (
+            action_id, repository_id, commit_sha, action_type, status, diff_hash, executed_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+          [actionId, cleanRepoId, cleanCommitSha, actionType, status, diffHash]
+        );
+      });
+    } catch (err) {
+      Logger.warn('Failed to record approval in PostgreSQL', { actionId }, err);
+    }
   }
 }
 
