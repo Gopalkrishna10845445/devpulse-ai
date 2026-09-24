@@ -58,6 +58,7 @@ export function parseGitHubWebhookEvent(
   else if (rawEventName === 'pull_request') eventName = 'pull_request';
   else if (rawEventName === 'repository') eventName = 'repository';
   else if (rawEventName === 'installation') eventName = 'installation';
+  else if (rawEventName === 'installation_repositories') eventName = 'installation_repositories';
   else if (rawEventName === 'workflow_run') eventName = 'workflow_run';
   else if (rawEventName === 'ping') eventName = 'ping';
 
@@ -78,12 +79,21 @@ export function parseGitHubWebhookEvent(
     }
   }
 
+  // If installation or ping event without top-level repository
+  if (!fullName && (eventName === 'installation' || eventName === 'installation_repositories' || eventName === 'ping')) {
+    const accountLogin = payload.installation?.account?.login || 'github';
+    owner = accountLogin;
+    name = 'app';
+    fullName = `${owner}/${name}`;
+  }
+
   // Sanitize coordinates (prevent path traversal / injection)
   fullName = fullName.replace(/\.\./g, '').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9._\-\/]/g, '');
   owner = owner.replace(/\.\./g, '').replace(/[^a-zA-Z0-9._\-]/g, '');
   name = name.replace(/\.\./g, '').replace(/[^a-zA-Z0-9._\-]/g, '');
 
-  if (eventName !== 'ping' && (!fullName || !owner || !name)) {
+  const isAccountEvent = eventName === 'ping' || eventName === 'installation' || eventName === 'installation_repositories';
+  if (!isAccountEvent && (!fullName || !owner || !name)) {
     throw new WebhookParsingError('INVALID_REPOSITORY', 'Webhook payload is missing valid repository identification.');
   }
 

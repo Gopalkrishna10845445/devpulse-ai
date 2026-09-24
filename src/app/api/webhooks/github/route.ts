@@ -1,7 +1,7 @@
 /**
  * Phase 9 — GitHub Webhook Endpoint
  *
- * POST /api/github/webhook
+ * POST /api/webhooks/github
  *
  * Receives real GitHub webhook events, cryptographically verifies X-Hub-Signature-256,
  * deduplicates deliveries, classifies event actions, and enqueues background analysis.
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         deliveryId,
         duplicate: true,
         message: 'Delivery already received and recorded.',
-      });
+      }, { status: 200 });
     }
 
     // 4. Parse & Sanitize Webhook Payload

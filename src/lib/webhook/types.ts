@@ -10,6 +10,7 @@ export type WebhookEventName =
   | 'pull_request'
   | 'repository'
   | 'installation'
+  | 'installation_repositories'
   | 'workflow_run'
   | 'ping'
   | 'unknown';
