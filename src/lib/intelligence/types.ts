@@ -119,7 +119,7 @@ export interface DataFlowArc {
 
 export interface KeyEntrypoint {
   path: string;
-  type: 'web_page' | 'api_endpoint' | 'main_binary' | 'config' | 'service_root';
+  type: 'web_page' | 'api_endpoint' | 'main_binary' | 'config' | 'service_root' | 'cli';
   description: string;
 }
 
@@ -138,17 +138,193 @@ export interface ArchitectureModel {
   };
 }
 
+// ─── Technology Stack Intelligence ─────────────────────────────────────────────
+
+import {
+  RepositoryDependency,
+  RepositoryFramework,
+  RepositoryLanguageSummary,
+  RepositoryManifest,
+} from '../repository/types';
+
+export interface DatabaseUsageIntelligence {
+  detected: boolean;
+  type: string;
+  ormOrDriver?: string;
+  evidence: string[];
+}
+
+export interface AuthPatternIntelligence {
+  detected: boolean;
+  mechanism: string;
+  evidence: string[];
+}
+
+export interface TestingIntelligence {
+  detected: boolean;
+  frameworks: string[];
+  testFileCount: number;
+  evidence: string[];
+}
+
+export interface BuildAndDeploymentIntelligence {
+  detected: boolean;
+  tools: string[];
+  configFiles: string[];
+  evidence: string[];
+}
+
+export interface TechnologyStackIntelligence {
+  languages: RepositoryLanguageSummary[];
+  frameworks: RepositoryFramework[];
+  dependencies: RepositoryDependency[];
+  manifests: RepositoryManifest[];
+  database: DatabaseUsageIntelligence;
+  authentication: AuthPatternIntelligence;
+  testing: TestingIntelligence;
+  buildAndDeployment: BuildAndDeploymentIntelligence;
+}
+
+// ─── Architecture Patterns Summary ─────────────────────────────────────────────
+
+export interface ArchitecturePatternsSummary {
+  frontend: string;
+  backend: string;
+  api: string;
+  database: string;
+  authentication: string;
+  services: string;
+  utilities: string;
+  components: string;
+  hooks: string;
+  tests: string;
+  configuration: string;
+  infrastructure: string;
+  deployment: string;
+}
+
+// ─── Engineering Metrics ───────────────────────────────────────────────────────
+
+export interface LanguageDistributionItem {
+  language: string;
+  percentage: number;
+  filesCount: number;
+  bytes: number;
+}
+
+export interface EngineeringMetrics {
+  totalFiles: number;
+  analyzedFiles: number;
+  skippedFiles: number;
+  totalLinesOfCode: number;
+  totalBytes: number;
+  languagesCount: number;
+  modulesCount: number;
+  dependenciesCount: number;
+  devDependenciesCount: number;
+  testFilesCount: number;
+  configFilesCount: number;
+  apiRoutesCount: number;
+  componentsCount: number;
+  servicesCount: number;
+  modelsCount: number;
+  symbolsCount: number;
+  internalCouplingScore: number;
+  modularityScore: number;
+  languageDistribution: LanguageDistributionItem[];
+}
+
+// ─── Codebase Summary ──────────────────────────────────────────────────────────
+
+export interface CodebaseSummary {
+  overview: string;
+  technologies: string;
+  structure: string;
+  majorModules: string;
+  executionModel: string;
+  entrypoints: string;
+  engineeringObservations: string[];
+}
+
+// ─── Repository Structure ──────────────────────────────────────────────────────
+
+export interface MajorDirectoryEntry {
+  path: string;
+  name: string;
+  purpose: string;
+  fileCount: number;
+  bytes: number;
+}
+
+export interface ImportantFileEntry {
+  path: string;
+  role: string;
+  description: string;
+  loc?: number;
+  sizeBytes?: number;
+}
+
+export interface ApiEndpointEntry {
+  path: string;
+  method?: string;
+  description: string;
+  symbols: string[];
+}
+
+export interface FrontendComponentEntry {
+  name: string;
+  filePath: string;
+  isExported: boolean;
+  line?: number;
+}
+
+export interface ServiceEntry {
+  name: string;
+  filePath: string;
+  keyFunctions: string[];
+}
+
+export interface RepositoryStructure {
+  majorDirectories: MajorDirectoryEntry[];
+  importantFiles: ImportantFileEntry[];
+  entrypoints: KeyEntrypoint[];
+  apiEndpoints: ApiEndpointEntry[];
+  frontendComponents: FrontendComponentEntry[];
+  services: ServiceEntry[];
+  models: { name: string; filePath: string }[];
+  configFiles: string[];
+  testFiles: string[];
+}
+
 // ─── Root Codebase Intelligence Object ─────────────────────────────────────────
 
 export interface CodebaseIntelligence {
   repository: RepositoryRef;
+  projectType?: string;
+  summary?: CodebaseSummary;
+  metrics?: EngineeringMetrics;
+  technologyStack?: TechnologyStackIntelligence;
+  patterns?: ArchitecturePatternsSummary;
+  structure?: RepositoryStructure;
+  architecture: ArchitectureModel;
   files: FileIntelligence[];
   symbols: CodeSymbol[];
   imports: CodeImport[];
   exports: CodeExport[];
   relationships: ModuleRelationship[];
-  architecture: ArchitectureModel;
   analyzedAt: string;
   status: 'complete' | 'partial' | 'failed';
   durationMs: number;
 }
+
+export interface CompleteCodebaseIntelligence extends CodebaseIntelligence {
+  projectType: string;
+  summary: CodebaseSummary;
+  metrics: EngineeringMetrics;
+  technologyStack: TechnologyStackIntelligence;
+  patterns: ArchitecturePatternsSummary;
+  structure: RepositoryStructure;
+}
+
+
+

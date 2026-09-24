@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CodebaseIntelligence } from '@/lib/intelligence/types';
 import { RepositoryIndex } from '@/lib/repository/types';
 import {
@@ -13,13 +13,39 @@ import {
   ArrowRight,
   AlertCircle,
   FolderTree,
-  FileText
+  FileText,
+  Package,
+  Boxes,
+  Database,
+  Lock,
+  TestTube,
+  Wrench,
+  CheckCircle2,
+  Terminal,
+  Activity,
+  Code2,
+  Server,
+  Folder,
+  Check,
+  RefreshCw,
+  Info
 } from 'lucide-react';
 
 interface CodebaseIntelligenceTabProps {
   initialRepoFullName?: string;
   preloadedIndex?: RepositoryIndex | null;
 }
+
+type SubTab =
+  | 'overview'
+  | 'techstack'
+  | 'architecture'
+  | 'structure'
+  | 'dependencies'
+  | 'symbols'
+  | 'relationships'
+  | 'files'
+  | 'dataflow';
 
 export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = ({
   initialRepoFullName = 'Gopalkrishna10845445/devpulse-ai',
@@ -30,9 +56,15 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
   const [analysisStep, setAnalysisStep] = useState('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [intelligence, setIntelligence] = useState<CodebaseIntelligence | null>(null);
-  const abortRef = React.useRef<AbortController | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  React.useEffect(() => {
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('overview');
+  const [symbolFilter, setSymbolFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [depSearchQuery, setDepSearchQuery] = useState('');
+  const [depCategoryFilter, setDepCategoryFilter] = useState<string>('ALL');
+
+  useEffect(() => {
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
@@ -42,19 +74,20 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
     setErrorMsg(null);
     setAnalysisStep('idle');
 
+    // Auto-trigger analysis for the repository
+    if (initialRepoFullName) {
+      runAnalysis(initialRepoFullName);
+    }
+
     return () => {
       if (abortRef.current) {
         abortRef.current.abort();
       }
     };
   }, [initialRepoFullName]);
-  const [activeSubTab, setActiveSubTab] = useState<'architecture' | 'symbols' | 'relationships' | 'files' | 'dataflow'>('architecture');
-  const [symbolFilter, setSymbolFilter] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleAnalyze = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!repoInput.trim()) return;
+  const runAnalysis = async (targetRepo: string, forceRefresh = false) => {
+    if (!targetRepo.trim()) return;
 
     if (abortRef.current) {
       abortRef.current.abort();
@@ -64,7 +97,7 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
 
     setIsAnalyzing(true);
     setErrorMsg(null);
-    setAnalysisStep('Ingesting repository tree & manifests...');
+    setAnalysisStep('Ingesting repository tree & dependency manifests...');
 
     try {
       setAnalysisStep('Parsing language-aware symbols & resolving imports...');
@@ -72,10 +105,11 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: repoInput.includes('/') ? repoInput : undefined,
-          url: repoInput.startsWith('http') ? repoInput : undefined,
-          owner: !repoInput.includes('/') && !repoInput.startsWith('http') ? repoInput : undefined,
+          fullName: targetRepo.includes('/') ? targetRepo : undefined,
+          url: targetRepo.startsWith('http') ? targetRepo : undefined,
+          owner: !targetRepo.includes('/') && !targetRepo.startsWith('http') ? targetRepo : undefined,
           index: preloadedIndex || undefined,
+          forceRefresh,
         }),
         signal: controller.signal,
       });
@@ -101,6 +135,11 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
     }
   };
 
+  const handleAnalyze = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    runAnalysis(repoInput, true);
+  };
+
   const filteredSymbols = (intelligence?.symbols || []).filter(sym => {
     if (symbolFilter !== 'ALL' && sym.kind !== symbolFilter) return false;
     if (searchQuery) {
@@ -114,22 +153,94 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
     return true;
   });
 
+  const dependenciesList = intelligence?.technologyStack?.dependencies || [];
+  const filteredDependencies = dependenciesList.filter(dep => {
+    if (depCategoryFilter === 'DEV' && !dep.isDev) return false;
+    if (depCategoryFilter === 'PROD' && dep.isDev) return false;
+    if (depSearchQuery) {
+      const q = depSearchQuery.toLowerCase();
+      return dep.name.toLowerCase().includes(q) || (dep.versionConstraint && dep.versionConstraint.toLowerCase().includes(q));
+    }
+    return true;
+  });
+
+  const metrics = intelligence?.metrics || {
+    totalFiles: intelligence?.files?.length || 0,
+    analyzedFiles: intelligence?.files?.length || 0,
+    skippedFiles: 0,
+    symbolsCount: intelligence?.symbols?.length || 0,
+    totalLinesOfCode: intelligence?.files?.reduce((acc, f) => acc + f.loc, 0) || 0,
+    modularityScore: intelligence?.architecture?.metrics?.modularityScore || 80,
+    internalCouplingScore: intelligence?.architecture?.metrics?.internalCouplingScore || 0,
+    languageDistribution: [],
+  };
+
+  const summary = intelligence?.summary || {
+    overview: `${intelligence?.repository?.fullName || repoInput} codebase analysis.`,
+    technologies: 'Languages and frameworks detected from source tree.',
+    structure: 'Modular application structure.',
+    majorModules: 'Core source modules.',
+    executionModel: 'Standard execution model.',
+    entrypoints: 'Application entrypoints.',
+    engineeringObservations: ['Codebase indexed and analyzed.'],
+  };
+
+  const techStack = intelligence?.technologyStack || {
+    languages: [],
+    frameworks: [],
+    dependencies: [],
+    manifests: [],
+    database: { detected: false, type: 'Not detected', evidence: [] },
+    authentication: { detected: false, mechanism: 'Not detected', evidence: [] },
+    testing: { detected: false, frameworks: [], testFileCount: 0, evidence: [] },
+    buildAndDeployment: { detected: false, tools: [], configFiles: [], evidence: [] },
+  };
+
+  const patterns = intelligence?.patterns || {
+    frontend: 'Not detected',
+    backend: 'Not detected',
+    api: 'Not detected',
+    database: 'Not detected',
+    authentication: 'Not detected',
+    services: 'Not detected',
+    utilities: 'Not detected',
+    components: 'Not detected',
+    hooks: 'Not detected',
+    tests: 'Not detected',
+    configuration: 'Not detected',
+    infrastructure: 'Not detected',
+    deployment: 'Not detected',
+  };
+
+  const structure = intelligence?.structure || {
+    majorDirectories: [],
+    importantFiles: [],
+    entrypoints: intelligence?.architecture?.entrypoints || [],
+    apiEndpoints: [],
+    frontendComponents: [],
+    services: [],
+    models: [],
+    configFiles: [],
+    testFiles: [],
+  };
+
   return (
     <div className="w-full flex flex-col space-y-6 stagger-fade-up">
-      
       {/* Title & Description */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-heading-lg text-text-primary">Codebase Intelligence & Architecture</h2>
           <p className="text-body-sm text-text-muted mt-1">
-            Deterministic symbol extraction, import dependency graphs, module coupling, and architectural modeling.
+            Deterministic technology stack detection, symbol parsing, import resolution, and architectural modeling.
           </p>
         </div>
 
         {intelligence && (
-          <span className="px-3 py-1 rounded-sm border border-border bg-surface-alt text-text-secondary text-caption font-mono uppercase tracking-wider self-start sm:self-auto">
-            {intelligence.architecture.pattern}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-sm border border-border bg-surface-alt text-text-primary text-caption font-mono uppercase tracking-wider self-start sm:self-auto font-medium">
+              {intelligence.projectType || intelligence.architecture.pattern}
+            </span>
+          </div>
         )}
       </div>
 
@@ -155,12 +266,12 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             {isAnalyzing ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Analyzing Architecture...</span>
+                <span>Analyzing Repository...</span>
               </>
             ) : (
               <>
                 <Cpu size={14} />
-                <span>Analyze Codebase</span>
+                <span>Re-Analyze Codebase</span>
               </>
             )}
           </button>
@@ -181,52 +292,66 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
         )}
       </div>
 
+      {/* Empty State */}
+      {!intelligence && !isAnalyzing && !errorMsg && (
+        <div className="p-12 rounded-md bg-surface border border-border text-center space-y-3">
+          <Code2 size={32} className="mx-auto text-text-muted" />
+          <h3 className="text-heading-sm text-text-primary">Ready to Analyze Codebase</h3>
+          <p className="text-body-sm text-text-muted max-w-md mx-auto">
+            Click "Re-Analyze Codebase" above to inspect the repository structure, detect frameworks, extract symbols, and model its architecture.
+          </p>
+        </div>
+      )}
+
       {/* Intelligence Dashboard */}
       {intelligence && (
         <div className="space-y-6">
-          
           {/* Top Structural Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-4 rounded-md bg-surface border border-border">
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Total Files</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.totalFiles}</p>
+            </div>
+            <div className="p-4 rounded-md bg-surface border border-border">
               <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Analyzed Files</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalFilesAnalyzed}</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.analyzedFiles}</p>
             </div>
             <div className="p-4 rounded-md bg-surface border border-border">
               <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Code Symbols</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalSymbolsFound}</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.symbolsCount}</p>
             </div>
             <div className="p-4 rounded-md bg-surface border border-border">
-              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Internal Imports</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.totalImportsResolved}</p>
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Est. Lines of Code</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.totalLinesOfCode.toLocaleString()}</p>
             </div>
             <div className="p-4 rounded-md bg-surface border border-border">
-              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Module Edges</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.relationships.length}</p>
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Modularity Score</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.modularityScore}/100</p>
             </div>
             <div className="p-4 rounded-md bg-surface border border-border">
-              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Modularity</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.modularityScore}/100</p>
-            </div>
-            <div className="p-4 rounded-md bg-surface border border-border">
-              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Coupling Ratio</p>
-              <p className="text-xl font-mono font-medium text-text-primary mt-1">{intelligence.architecture.metrics.internalCouplingScore}%</p>
+              <p className="text-[10px] text-text-muted uppercase font-mono tracking-wider">Coupling Score</p>
+              <p className="text-xl font-mono font-medium text-text-primary mt-1">{metrics.internalCouplingScore}%</p>
             </div>
           </div>
 
           {/* Sub-Navigation Tabs */}
           <div className="flex items-center gap-1 border-b border-border pb-2 overflow-x-auto no-scrollbar text-xs">
             {[
-              { id: 'architecture', label: 'Architectural Model', icon: Layers },
+              { id: 'overview', label: 'Overview & Summary', icon: Info },
+              { id: 'techstack', label: 'Technology Stack', icon: Boxes },
+              { id: 'architecture', label: 'Architecture & Patterns', icon: Layers },
+              { id: 'structure', label: 'Repository Structure', icon: FolderTree },
+              { id: 'dependencies', label: `Dependencies (${dependenciesList.length})`, icon: Package },
               { id: 'symbols', label: `Symbols (${intelligence.symbols.length})`, icon: Cpu },
-              { id: 'relationships', label: `Relationships (${intelligence.relationships.length})`, icon: GitMerge },
+              { id: 'relationships', label: `Module Edges (${intelligence.relationships.length})`, icon: GitMerge },
               { id: 'files', label: `Files (${intelligence.files.length})`, icon: FileCode },
               { id: 'dataflow', label: 'Data Flow', icon: Network },
-            ].map(tab => {
+            ].map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveSubTab(tab.id as any)}
+                  onClick={() => setActiveSubTab(tab.id as SubTab)}
                   className={`px-3 py-1.5 rounded-md text-caption font-mono transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeSubTab === tab.id
                       ? 'bg-surface-alt text-text-primary border border-border font-medium'
@@ -240,10 +365,202 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             })}
           </div>
 
-          {/* TAB 1: ARCHITECTURAL MODEL & LAYERS */}
+          {/* TAB 0: OVERVIEW & SUMMARY */}
+          {activeSubTab === 'overview' && (
+            <div className="space-y-5">
+              {/* Executive Summary Card */}
+              <div className="p-5 rounded-md bg-surface border border-border space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-text-secondary" />
+                    <h3 className="text-heading-sm text-text-primary">Engineering Codebase Summary</h3>
+                  </div>
+                  <span className="text-caption font-mono text-text-muted">{intelligence.durationMs}ms duration</span>
+                </div>
+
+                <p className="text-body-sm text-text-primary leading-relaxed">{summary.overview}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-mono uppercase text-text-muted">Technologies & Libraries</p>
+                    <p className="text-caption text-text-secondary leading-relaxed">{summary.technologies}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-mono uppercase text-text-muted">Directory Layout</p>
+                    <p className="text-caption text-text-secondary leading-relaxed">{summary.structure}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-mono uppercase text-text-muted">Major Modules</p>
+                    <p className="text-caption text-text-secondary leading-relaxed">{summary.majorModules}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-mono uppercase text-text-muted">Execution Model</p>
+                    <p className="text-caption text-text-secondary leading-relaxed">{summary.executionModel}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Engineering Observations */}
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  Key Deterministic Observations
+                </h4>
+                <div className="space-y-2">
+                  {summary.engineeringObservations.map((obs, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-body-sm text-text-secondary">
+                      <CheckCircle2 size={14} className="text-text-primary mt-0.5 flex-shrink-0" />
+                      <span>{obs}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Language Distribution */}
+              {metrics.languageDistribution.length > 0 && (
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                    Programming Language Distribution
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {metrics.languageDistribution.map((lang, idx) => (
+                      <div key={idx} className="p-3 rounded-md bg-surface-alt border border-border flex items-center justify-between">
+                        <div>
+                          <p className="font-mono font-medium text-body-sm text-text-primary">{lang.language}</p>
+                          <p className="text-text-muted font-mono text-[11px]">{lang.filesCount} files ({(lang.bytes / 1024).toFixed(1)} KB)</p>
+                        </div>
+                        <span className="text-heading-sm font-mono text-text-primary">{lang.percentage}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 1: TECHNOLOGY STACK */}
+          {activeSubTab === 'techstack' && (
+            <div className="space-y-5">
+              {/* Stack Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Languages */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Code2 size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Languages</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {techStack.languages.length === 0 ? (
+                      <p className="text-caption text-text-muted font-mono">No language summary available</p>
+                    ) : (
+                      techStack.languages.map((l, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-text-primary font-medium">{l.name}</span>
+                          <span className="text-text-muted">{l.fileCount} files ({l.percentage}%)</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Frameworks */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Boxes size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Frameworks</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {techStack.frameworks.length === 0 ? (
+                      <p className="text-caption text-text-muted font-mono">No external frameworks detected</p>
+                    ) : (
+                      techStack.frameworks.map((f, i) => (
+                        <div key={i} className="p-2.5 rounded-sm bg-surface-alt border border-border space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-medium text-text-primary text-xs">{f.name}</span>
+                            <span className="px-1.5 py-0.5 rounded-sm bg-surface border border-border text-[10px] font-mono text-text-muted uppercase">
+                              {f.category}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-text-muted font-mono">{f.evidence.join('; ')}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Database */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Database size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Database & Storage</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-body-sm text-text-primary font-medium">
+                      {techStack.database.detected ? techStack.database.type : 'Not detected'}
+                    </p>
+                    {techStack.database.evidence.map((ev, i) => (
+                      <p key={i} className="text-[11px] text-text-muted font-mono">• {ev}</p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Authentication */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Lock size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Authentication & Security</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-body-sm text-text-primary font-medium">
+                      {techStack.authentication.detected ? techStack.authentication.mechanism : 'Not detected'}
+                    </p>
+                    {techStack.authentication.evidence.map((ev, i) => (
+                      <p key={i} className="text-[11px] text-text-muted font-mono">• {ev}</p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Testing */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TestTube size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Testing Infrastructure</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-body-sm text-text-primary font-medium">
+                      {techStack.testing.detected
+                        ? `${techStack.testing.frameworks.join(', ')} (${techStack.testing.testFileCount} test files)`
+                        : 'Not detected'}
+                    </p>
+                    {techStack.testing.evidence.map((ev, i) => (
+                      <p key={i} className="text-[11px] text-text-muted font-mono">• {ev}</p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Build & Deployment */}
+                <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Wrench size={16} className="text-text-secondary" />
+                    <h4 className="text-heading-sm text-text-primary">Build & Tooling</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-body-sm text-text-primary font-medium">
+                      {techStack.buildAndDeployment.detected
+                        ? techStack.buildAndDeployment.tools.join(', ')
+                        : 'Standard defaults'}
+                    </p>
+                    {techStack.buildAndDeployment.evidence.map((ev, i) => (
+                      <p key={i} className="text-[11px] text-text-muted font-mono">• {ev}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: ARCHITECTURE & PATTERNS */}
           {activeSubTab === 'architecture' && (
-            <div className="space-y-4">
-              
+            <div className="space-y-5">
               {/* Pattern Overview Card */}
               <div className="p-5 rounded-md bg-surface border border-border space-y-2">
                 <div className="flex items-center justify-between">
@@ -254,6 +571,21 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                   <span className="text-caption font-mono text-text-muted">{intelligence.durationMs}ms duration</span>
                 </div>
                 <p className="text-body-sm text-text-secondary leading-relaxed">{intelligence.architecture.summary}</p>
+              </div>
+
+              {/* Architectural Patterns Matrix */}
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  Detected Architectural Dimensions
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(patterns).map(([key, value], idx) => (
+                    <div key={idx} className="p-3 rounded-md bg-surface-alt border border-border space-y-1">
+                      <p className="text-[10px] uppercase font-mono text-text-muted">{key}</p>
+                      <p className="text-caption font-mono text-text-primary font-medium">{value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Architectural Layers Stack */}
@@ -296,14 +628,135 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                   ))}
                 </div>
               </div>
-
             </div>
           )}
 
-          {/* TAB 2: CODE SYMBOLS EXPLORER */}
+          {/* TAB 3: REPOSITORY STRUCTURE */}
+          {activeSubTab === 'structure' && (
+            <div className="space-y-5">
+              {/* Major Directories */}
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  Major Architectural Directories
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {structure.majorDirectories.map((dir, idx) => (
+                    <div key={idx} className="p-3.5 rounded-md bg-surface-alt border border-border flex items-start justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <Folder size={14} className="text-text-secondary" />
+                          <span className="font-mono font-medium text-body-sm text-text-primary">{dir.path}</span>
+                        </div>
+                        <p className="text-[11px] text-text-muted font-mono">{dir.purpose}</p>
+                      </div>
+                      <div className="text-right font-mono text-caption text-text-muted">
+                        <p>{dir.fileCount} files</p>
+                        <p className="text-[10px]">{(dir.bytes / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Important Files */}
+              <div className="p-5 rounded-md bg-surface border border-border space-y-3">
+                <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
+                  Important Source Files & Roles
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {structure.importantFiles.map((file, idx) => (
+                    <div key={idx} className="p-3 rounded-md bg-surface-alt border border-border flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-mono font-medium text-xs text-text-primary">{file.path}</p>
+                        <p className="text-[11px] text-text-muted mt-0.5">{file.description}</p>
+                      </div>
+                      <span className="px-1.5 py-0.5 rounded-sm bg-surface border border-border text-[10px] font-mono text-text-secondary whitespace-nowrap">
+                        {file.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: DEPENDENCIES */}
+          {activeSubTab === 'dependencies' && (
+            <div className="space-y-3">
+              {/* Filter Bar */}
+              <div className="p-3 rounded-md bg-surface border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="w-full sm:w-72 relative">
+                  <input
+                    type="text"
+                    placeholder="Search dependencies..."
+                    value={depSearchQuery}
+                    onChange={(e) => setDepSearchQuery(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-md bg-surface-alt border border-border text-body-sm text-text-primary font-mono focus:outline-none focus:border-border-strong"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {['ALL', 'PROD', 'DEV'].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setDepCategoryFilter(cat)}
+                      className={`px-2.5 py-1 rounded-sm font-mono text-caption transition-colors ${
+                        depCategoryFilter === cat
+                          ? 'bg-surface-alt text-text-primary border border-border font-medium'
+                          : 'text-text-muted hover:text-text-secondary'
+                      }`}
+                    >
+                      {cat === 'ALL' ? 'All Packages' : cat === 'PROD' ? 'Production' : 'DevDependencies'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="rounded-md bg-surface border border-border overflow-hidden">
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-surface-alt border-b border-border text-[10px] uppercase text-text-muted sticky top-0">
+                      <tr>
+                        <th className="p-3">Package Name</th>
+                        <th className="p-3">Version Constraint</th>
+                        <th className="p-3">Type</th>
+                        <th className="p-3">Ecosystem</th>
+                        <th className="p-3">Manifest</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredDependencies.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-6 text-center text-text-muted">
+                            No dependencies found matching filters.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredDependencies.map((dep, idx) => (
+                          <tr key={idx} className="hover:bg-surface-alt/50 transition-colors">
+                            <td className="p-3 font-medium text-text-primary">{dep.name}</td>
+                            <td className="p-3 text-text-muted">{dep.versionConstraint || 'latest'}</td>
+                            <td className="p-3">
+                              <span className={`px-1.5 py-0.5 rounded-sm text-[10px] ${dep.isDev ? 'bg-surface-alt text-text-muted border border-border' : 'bg-surface-alt text-text-primary border border-border font-medium'}`}>
+                                {dep.isDev ? 'dev' : 'prod'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-text-muted">{dep.ecosystem}</td>
+                            <td className="p-3 text-text-muted">{dep.manifestPath}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: CODE SYMBOLS EXPLORER */}
           {activeSubTab === 'symbols' && (
             <div className="space-y-3">
-              
               {/* Filter and Search Bar */}
               <div className="p-3 rounded-md bg-surface border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="w-full sm:w-72 relative">
@@ -317,13 +770,13 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                 </div>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
-                  {['ALL', 'component', 'function', 'class', 'interface', 'type_alias', 'endpoint', 'struct'].map(kind => (
+                  {['ALL', 'component', 'endpoint', 'function', 'class', 'interface', 'type_alias', 'struct'].map((kind) => (
                     <button
                       key={kind}
                       onClick={() => setSymbolFilter(kind)}
                       className={`px-2 py-0.5 rounded-sm font-mono text-[11px] transition-colors whitespace-nowrap ${
                         symbolFilter === kind
-                          ? 'bg-surface-alt text-text-primary border border-border-strong font-medium'
+                          ? 'bg-surface-alt text-text-primary border border-border font-medium'
                           : 'text-text-muted hover:text-text-secondary'
                       }`}
                     >
@@ -347,32 +800,39 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {filteredSymbols.map((sym, idx) => (
-                        <tr key={idx} className="hover:bg-surface-alt/50 transition-colors">
-                          <td className="p-3 font-medium text-text-primary">{sym.name}</td>
-                          <td className="p-3">
-                            <span className="px-1.5 py-0.5 rounded-sm text-[10px] bg-surface-alt text-text-secondary border border-border uppercase">
-                              {sym.kind}
-                            </span>
+                      {filteredSymbols.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-6 text-center text-text-muted">
+                            No symbols found matching filters.
                           </td>
-                          <td className="p-3 text-text-muted truncate max-w-xs">{sym.filePath}</td>
-                          <td className="p-3">
-                            <span className={`px-1.5 py-0.5 rounded-sm text-[10px] ${sym.isExported ? 'text-text-primary bg-surface-alt border border-border' : 'text-text-muted'}`}>
-                              {sym.isExported ? 'yes' : 'no'}
-                            </span>
-                          </td>
-                          <td className="p-3 text-text-muted truncate max-w-md">{sym.signature || '—'}</td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredSymbols.map((sym, idx) => (
+                          <tr key={idx} className="hover:bg-surface-alt/50 transition-colors">
+                            <td className="p-3 font-medium text-text-primary">{sym.name}</td>
+                            <td className="p-3">
+                              <span className="px-1.5 py-0.5 rounded-sm text-[10px] bg-surface-alt text-text-secondary border border-border uppercase">
+                                {sym.kind}
+                              </span>
+                            </td>
+                            <td className="p-3 text-text-muted truncate max-w-xs">{sym.filePath}</td>
+                            <td className="p-3">
+                              <span className={`px-1.5 py-0.5 rounded-sm text-[10px] ${sym.isExported ? 'text-text-primary bg-surface-alt border border-border' : 'text-text-muted'}`}>
+                                {sym.isExported ? 'yes' : 'no'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-text-muted truncate max-w-md">{sym.signature || '—'}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
-
             </div>
           )}
 
-          {/* TAB 3: MODULE RELATIONSHIPS */}
+          {/* TAB 6: MODULE RELATIONSHIPS */}
           {activeSubTab === 'relationships' && (
             <div className="space-y-3">
               {intelligence.relationships.length === 0 ? (
@@ -407,7 +867,7 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             </div>
           )}
 
-          {/* TAB 4: FILE INTELLIGENCE */}
+          {/* TAB 7: FILE INTELLIGENCE */}
           {activeSubTab === 'files' && (
             <div className="rounded-md bg-surface border border-border overflow-hidden">
               <div className="overflow-x-auto max-h-96">
@@ -443,10 +903,9 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
             </div>
           )}
 
-          {/* TAB 5: DATA FLOW & ENTRYPOINTS */}
+          {/* TAB 8: DATA FLOW & ENTRYPOINTS */}
           {activeSubTab === 'dataflow' && (
             <div className="space-y-4">
-              
               {/* Entrypoints */}
               <div className="p-5 rounded-md bg-surface border border-border space-y-3">
                 <h4 className="text-caption font-mono uppercase tracking-wider text-text-secondary">
@@ -487,13 +946,10 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
                   ))}
                 </div>
               </div>
-
             </div>
           )}
-
         </div>
       )}
-
     </div>
   );
 };

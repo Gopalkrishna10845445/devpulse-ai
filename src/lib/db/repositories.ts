@@ -360,6 +360,112 @@ export class ReportDatabaseRepository {
   }
 
   /**
+   * Persists a Codebase Intelligence report in PostgreSQL.
+   */
+  public static async saveCodebaseIntelligence(
+    repositoryId: string,
+    commitSha: string,
+    intelligence: any
+  ): Promise<void> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return;
+
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+    const cleanCommitSha = commitSha.trim();
+
+    try {
+      await db.transaction(async (client) => {
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name, default_branch)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            cleanRepoId,
+            intelligence.repository?.fullName || cleanRepoId,
+            intelligence.repository?.owner || cleanRepoId.split('/')[0] || cleanRepoId,
+            intelligence.repository?.name || cleanRepoId.split('/')[1] || cleanRepoId,
+            intelligence.repository?.defaultBranch || 'main',
+          ]
+        );
+
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, branch, indexed_at, files_count)
+           VALUES ($1, $2, $3, NOW(), $4)
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [
+            cleanRepoId,
+            cleanCommitSha,
+            intelligence.repository?.defaultBranch || 'main',
+            intelligence.metrics?.totalFiles || 0,
+          ]
+        );
+
+        const pattern = intelligence.architecture?.pattern || intelligence.projectType || 'Modular';
+        const modularity = intelligence.metrics?.modularityScore || 80;
+        const layers = JSON.stringify(intelligence.architecture?.layers || []);
+
+        await client.query(
+          `INSERT INTO engineering_reports (
+            repository_id, commit_sha, overall_score, maintainability_score,
+            architecture_type, cycle_count, layers, hotspot_files, report_data
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb)
+          ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
+            overall_score = $3,
+            maintainability_score = $4,
+            architecture_type = $5,
+            cycle_count = $6,
+            layers = $7::jsonb,
+            report_data = $9::jsonb`,
+          [
+            cleanRepoId,
+            cleanCommitSha,
+            modularity,
+            modularity,
+            pattern,
+            0,
+            layers,
+            JSON.stringify([]),
+            JSON.stringify(intelligence),
+          ]
+        );
+      });
+    } catch (err) {
+      console.warn('[ReportDatabaseRepository] Failed to save codebase intelligence in PostgreSQL:', err);
+    }
+  }
+
+  /**
+   * Retrieves stored Codebase Intelligence report from PostgreSQL.
+   */
+  public static async getCodebaseIntelligence(
+    repositoryId: string,
+    commitSha?: string
+  ): Promise<any | null> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return null;
+
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+
+    try {
+      let query = `SELECT report_data FROM engineering_reports WHERE repository_id = $1`;
+      const params: any[] = [cleanRepoId];
+
+      if (commitSha) {
+        query += ` AND commit_sha = $2 ORDER BY created_at DESC LIMIT 1`;
+        params.push(commitSha.trim());
+      } else {
+        query += ` ORDER BY created_at DESC LIMIT 1`;
+      }
+
+      const res = await db.query(query, params);
+      if (res.rows.length === 0) return null;
+      return res.rows[0].report_data;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Persists a Security Intelligence Report.
    */
   public static async saveSecurityReport(
