@@ -20,20 +20,26 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const username = searchParams.get('username')?.trim();
 
-    if (!username) {
+    const cleanUsername = username ? username.replace(/[^a-zA-Z0-9._-]/g, '') : '';
+    const headers = buildHeaders();
+
+    const url = cleanUsername
+      ? `${API_BASE}/users/${encodeURIComponent(cleanUsername)}/repos?sort=updated&per_page=30`
+      : process.env.GITHUB_TOKEN
+      ? `${API_BASE}/user/repos?sort=updated&per_page=30`
+      : null;
+
+    if (!url) {
       return NextResponse.json({ error: 'Username query parameter is required.' }, { status: 400 });
     }
 
-    const cleanUsername = username.replace(/[^a-zA-Z0-9._-]/g, '');
-    const headers = buildHeaders();
-
-    const res = await fetch(
-      `${API_BASE}/users/${encodeURIComponent(cleanUsername)}/repos?sort=updated&per_page=30`,
-      { headers }
-    );
+    const res = await fetch(url, { headers });
 
     if (res.status === 404) {
-      return NextResponse.json({ error: `GitHub user "${cleanUsername}" was not found.` }, { status: 404 });
+      return NextResponse.json(
+        { error: cleanUsername ? `GitHub user "${cleanUsername}" was not found.` : 'Repositories not found.' },
+        { status: 404 }
+      );
     }
     if (res.status === 403 || res.status === 429) {
       return NextResponse.json(

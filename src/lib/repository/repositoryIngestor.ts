@@ -260,7 +260,7 @@ async function doIngestRepository(
   try {
     const treeRes = await fetch(
       `${API_BASE}/repos/${owner}/${repo}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`,
-      headers
+      { headers }
     );
 
     if (treeRes.status === 401) {
@@ -373,6 +373,14 @@ async function doIngestRepository(
     rateLimited,
     limits,
   });
+
+  // ── 6. Persist to PostgreSQL (Idempotent & Fallback Safe) ───────────────────
+  try {
+    const { RepositoryDatabaseRepository } = await import('../db/repositories');
+    await RepositoryDatabaseRepository.saveIngestedIndex(index);
+  } catch {
+    // Non-fatal if database is unconfigured or in memory fallback
+  }
 
   return index;
 }

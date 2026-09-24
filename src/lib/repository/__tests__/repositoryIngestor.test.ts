@@ -241,4 +241,100 @@ describe('ingestRepository with mocked GitHub API', () => {
       expect(err.code).toBe('EMPTY_REPOSITORY');
     }
   });
+
+  it('handles 401 unauthorized / invalid GITHUB_TOKEN', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      status: 401,
+      ok: false,
+    }));
+
+    try {
+      await ingestRepository({ owner: 'octocat', repository: 'private-repo' });
+      expect.unreachable();
+    } catch (err: any) {
+      expect(err).toBeInstanceOf(IngestionError);
+      expect(err.code).toBe('ACCESS_DENIED');
+    }
+  });
+
+  it('enforces single-file size and repository-wide size limits', async () => {
+    const mockRepoMeta = {
+      name: 'limits-repo',
+      owner: { login: 'octocat' },
+      default_branch: 'main',
+    };
+
+    const mockTree = {
+      truncated: false,
+      tree: [
+        { path: 'small.ts', type: 'blob', size: 100 },
+        { path: 'huge.ts', type: 'blob', size: 500 * 1024 }, // exceeds 250KB limit
+      ],
+    };
+
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/trees/')) {
+        return Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => Promise.resolve(mockTree),
+        });
+      }
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(mockRepoMeta),
+      });
+    }));
+
+    const index = await ingestRepository({
+      owner: 'octocat',
+      repository: 'limits-repo',
+    });
+
+    const smallFile = index.files.find(f => f.path === 'small.ts')!;
+    expect(smallFile.status).toBe('indexed');
+
+    const hugeFile = index.files.find(f => f.path === 'huge.ts')!;
+    expect(hugeFile.status).toBe('skipped');
+    expect(hugeFile.skipReason).toBe('file_too_large');
+  });
+
+  it('provides idempotent results on repeated ingestion requests', async () => {
+    const mockRepoMeta = {
+      name: 'idempotent-repo',
+      owner: { login: 'octocat' },
+      default_branch: 'main',
+    };
+
+    const mockTree = {
+      truncated: false,
+      tree: [{ path: 'index.ts', type: 'blob', size: 100 }],
+    };
+
+    const fetchSpy = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/trees/')) {
+        return Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => Promise.resolve(mockTree),
+        });
+      }
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(mockRepoMeta),
+      });
+    });
+
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const first = await ingestRepository({ owner: 'octocat', repository: 'idempotent-repo' });
+    const second = await ingestRepository({ owner: 'octocat', repository: 'idempotent-repo' });
+
+    expect(first.repository.fullName).toBe('octocat/idempotent-repo');
+    expect(second.repository.fullName).toBe('octocat/idempotent-repo');
+    expect(first.ingestion.indexedFilesCount).toBe(second.ingestion.indexedFilesCount);
+  });
 });
+

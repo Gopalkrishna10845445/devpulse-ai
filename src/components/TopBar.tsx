@@ -22,6 +22,7 @@ import {
   Radio,
   Github,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 import { useSession } from '@/lib/auth/useSession';
 
@@ -132,6 +133,41 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   // Custom repo input in switcher
   const [customRepoInput, setCustomRepoInput] = useState('');
+
+  // Real GitHub repositories state for authenticated user
+  const [userRepos, setUserRepos] = useState<Array<{ name: string; fullName: string; isPrivate: boolean; stars: number; language?: string }>>([]);
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false);
+  const [repoFetchError, setRepoFetchError] = useState<string | null>(null);
+
+  const fetchRepositories = useCallback(async () => {
+    setIsLoadingRepos(true);
+    setRepoFetchError(null);
+    try {
+      const url = user?.githubLogin
+        ? `/api/repository/list?username=${encodeURIComponent(user.githubLogin)}`
+        : '/api/repository/list';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.repos)) {
+          setUserRepos(data.repos);
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setRepoFetchError(errData.error || 'Failed to fetch repositories');
+      }
+    } catch (err: any) {
+      setRepoFetchError(err.message || 'Failed to load repositories');
+    } finally {
+      setIsLoadingRepos(false);
+    }
+  }, [user?.githubLogin]);
+
+  useEffect(() => {
+    if (isRepoSwitcherOpen) {
+      fetchRepositories();
+    }
+  }, [isRepoSwitcherOpen, fetchRepositories]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -293,17 +329,38 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </button>
               </form>
 
-              {/* Suggested / Ingested Repositories */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-medium text-text-muted block mb-1">
-                  Preset Repositories
-                </span>
-                {KNOWN_REPOSITORIES.map((repo) => {
-                  const isSelected = repo === currentRepo;
+              {/* Real Ingested / User Repositories */}
+              <div className="space-y-1 max-h-60 overflow-y-auto no-scrollbar">
+                <div className="flex items-center justify-between pb-1">
+                  <span className="text-[11px] font-medium text-text-muted block">
+                    {authenticated && user?.githubLogin ? `${user.githubLogin}'s Repositories` : 'Repositories'}
+                  </span>
+                  {isLoadingRepos && <Loader2 size={11} className="animate-spin text-text-muted" />}
+                </div>
+
+                {isLoadingRepos && userRepos.length === 0 && (
+                  <div className="py-3 flex items-center justify-center gap-2 text-caption text-text-muted">
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Loading repositories...</span>
+                  </div>
+                )}
+
+                {repoFetchError && (
+                  <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-[11px] text-semantic-red">
+                    <span>{repoFetchError}</span>
+                  </div>
+                )}
+
+                {!isLoadingRepos && userRepos.length === 0 && !repoFetchError && (
+                  <p className="text-[11px] text-text-muted py-1">No repositories found.</p>
+                )}
+
+                {userRepos.map((repo) => {
+                  const isSelected = repo.fullName === currentRepo;
                   return (
                     <button
-                      key={repo}
-                      onClick={() => handleSelectRepository(repo)}
+                      key={repo.fullName}
+                      onClick={() => handleSelectRepository(repo.fullName)}
                       className={`w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between gap-2 text-caption font-mono transition-colors ${
                         isSelected
                           ? 'bg-surface-alt text-text-primary font-medium border border-border'
@@ -312,12 +369,47 @@ export const TopBar: React.FC<TopBarProps> = ({
                     >
                       <div className="flex items-center gap-2 truncate">
                         <FolderGit2 size={13} className={isSelected ? 'text-semantic-green' : 'text-text-muted'} />
-                        <span className="truncate">{repo}</span>
+                        <span className="truncate">{repo.name}</span>
+                        {repo.isPrivate && <Lock size={10} className="text-text-muted flex-shrink-0" />}
                       </div>
-                      {isSelected && <Check size={13} className="text-semantic-green flex-shrink-0" />}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {repo.stars > 0 && (
+                          <span className="text-[10px] text-text-muted">★{repo.stars}</span>
+                        )}
+                        {isSelected && <Check size={13} className="text-semantic-green" />}
+                      </div>
                     </button>
                   );
                 })}
+
+                {/* Preset Repositories fallback if list is empty or for quick access */}
+                {userRepos.length === 0 && (
+                  <div className="pt-2 border-t border-border space-y-1">
+                    <span className="text-[10px] font-medium text-text-muted uppercase tracking-wider block mb-1">
+                      Presets
+                    </span>
+                    {KNOWN_REPOSITORIES.map((repo) => {
+                      const isSelected = repo === currentRepo;
+                      return (
+                        <button
+                          key={repo}
+                          onClick={() => handleSelectRepository(repo)}
+                          className={`w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between gap-2 text-caption font-mono transition-colors ${
+                            isSelected
+                              ? 'bg-surface-alt text-text-primary font-medium border border-border'
+                              : 'text-text-secondary hover:bg-surface-alt hover:text-text-primary'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <FolderGit2 size={13} className={isSelected ? 'text-semantic-green' : 'text-text-muted'} />
+                            <span className="truncate">{repo}</span>
+                          </div>
+                          {isSelected && <Check size={13} className="text-semantic-green flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

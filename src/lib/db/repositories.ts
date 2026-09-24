@@ -395,3 +395,91 @@ export class ReportDatabaseRepository {
     );
   }
 }
+
+// ─── 5. Ingested Repository Metadata Store ────────────────────────────────────
+
+export class RepositoryDatabaseRepository {
+  /**
+   * Persists an ingested repository and its commit state in PostgreSQL.
+   */
+  public static async saveIngestedIndex(index: any): Promise<void> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return;
+
+    const repo = index.repository;
+    if (!repo || !repo.fullName) return;
+
+    const cleanRepoId = repo.fullName.toLowerCase().trim();
+
+    try {
+      await db.transaction(async (client) => {
+        // 1. Upsert repository record
+        await client.query(
+          `INSERT INTO repositories (
+            id, full_name, owner, name, default_branch, description,
+            languages, frameworks, is_private, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            full_name = $2,
+            owner = $3,
+            name = $4,
+            default_branch = $5,
+            description = $6,
+            languages = $7::jsonb,
+            frameworks = $8::jsonb,
+            is_private = $9,
+            updated_at = NOW()`,
+          [
+            cleanRepoId,
+            repo.fullName,
+            repo.owner,
+            repo.name,
+            repo.defaultBranch || 'main',
+            repo.description || '',
+            JSON.stringify(index.languages || []),
+            JSON.stringify(index.frameworks || []),
+            Boolean(repo.isPrivate),
+          ]
+        );
+
+        // 2. Register commit record
+        const commitSha = repo.defaultBranch || 'main';
+        await client.query(
+          `INSERT INTO repository_commits (
+            repository_id, commit_sha, branch, indexed_at, files_count
+          ) VALUES ($1, $2, $3, NOW(), $4)
+          ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
+            branch = $3,
+            indexed_at = NOW(),
+            files_count = $4`,
+          [
+            cleanRepoId,
+            commitSha,
+            repo.defaultBranch || 'main',
+            index.ingestion?.indexedFilesCount || 0,
+          ]
+        );
+      });
+    } catch (err) {
+      console.warn('[RepositoryDatabaseRepository] Failed to persist ingested index in PostgreSQL:', err);
+    }
+  }
+
+  /**
+   * Retrieves an ingested repository by full name.
+   */
+  public static async getRepository(fullName: string): Promise<any | null> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return null;
+
+    const cleanRepoId = fullName.toLowerCase().trim();
+    const res = await db.query(
+      `SELECT * FROM repositories WHERE id = $1 LIMIT 1`,
+      [cleanRepoId]
+    );
+
+    if (res.rows.length === 0) return null;
+    return res.rows[0];
+  }
+}
+
