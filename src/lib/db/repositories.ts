@@ -324,7 +324,7 @@ export class FixDatabaseRepository {
 
 export class ReportDatabaseRepository {
   /**
-   * Persists an Engineering Health Report.
+   * Persists an Engineering Health Report in PostgreSQL with strict repository and commit isolation.
    */
   public static async saveEngineeringReport(
     repositoryId: string,
@@ -334,29 +334,92 @@ export class ReportDatabaseRepository {
     const isLive = await db.isAvailable();
     if (!isLive) return;
 
-    await db.query(
-      `INSERT INTO engineering_reports (
-        repository_id, commit_sha, overall_score, maintainability_score,
-        architecture_type, cycle_count, layers, hotspot_files, report_data
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb)
-      ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
-        overall_score = $3,
-        maintainability_score = $4,
-        architecture_type = $5,
-        cycle_count = $6,
-        report_data = $9::jsonb`,
-      [
-        repositoryId,
-        commitSha,
-        report.overallHealthScore || 0,
-        report.maintainabilityIndex || 0,
-        report.architectureType || 'Modular',
-        (report.circularDependencies && report.circularDependencies.length) || 0,
-        JSON.stringify(report.layerAdherence || []),
-        JSON.stringify(report.hotspots || []),
-        JSON.stringify(report),
-      ]
-    );
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+    const cleanCommitSha = commitSha.trim();
+
+    try {
+      await db.transaction(async (client) => {
+        // 1. Ensure repository record exists
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name)
+           VALUES ($1, $1, $2, $3)
+           ON CONFLICT (id) DO NOTHING`,
+          [cleanRepoId, cleanRepoId.split('/')[0] || cleanRepoId, cleanRepoId.split('/')[1] || cleanRepoId]
+        );
+
+        // 2. Ensure commit record exists
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, indexed_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [cleanRepoId, cleanCommitSha]
+        );
+
+        const overallScore = report.summary?.findingsBySeverity?.high !== undefined
+          ? Math.max(0, 100 - (report.summary.findingsBySeverity.high * 20 + report.summary.findingsBySeverity.medium * 10))
+          : (report.overallHealthScore || 85);
+
+        const maintainabilityScore = report.architecture?.modularityScore || report.maintainabilityIndex || 80;
+        const archType = report.architecture?.detectedPattern || report.architectureType || 'Modular Monolith';
+        const cycleCount = report.architecture?.circularDependencies?.length || (report.circularDependencies && report.circularDependencies.length) || 0;
+
+        await client.query(
+          `INSERT INTO engineering_reports (
+            repository_id, commit_sha, overall_score, maintainability_score,
+            architecture_type, cycle_count, layers, hotspot_files, report_data
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb)
+          ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
+            overall_score = $3,
+            maintainability_score = $4,
+            architecture_type = $5,
+            cycle_count = $6,
+            layers = $7::jsonb,
+            hotspot_files = $8::jsonb,
+            report_data = $9::jsonb`,
+          [
+            cleanRepoId,
+            cleanCommitSha,
+            overallScore,
+            maintainabilityScore,
+            archType,
+            cycleCount,
+            JSON.stringify(report.architecture?.metrics || report.layerAdherence || []),
+            JSON.stringify(report.hotspots || []),
+            JSON.stringify(report),
+          ]
+        );
+      });
+    } catch (err) {
+      console.warn('[ReportDatabaseRepository] Failed to persist engineering report:', err);
+    }
+  }
+
+  /**
+   * Retrieves an existing Engineering Health Report for a repository commit from PostgreSQL.
+   */
+  public static async getEngineeringReport(
+    repositoryId: string,
+    commitSha: string
+  ): Promise<any | null> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return null;
+
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+    const cleanCommitSha = commitSha.trim();
+
+    try {
+      const res = await db.query(
+        `SELECT report_data FROM engineering_reports
+         WHERE repository_id = $1 AND commit_sha = $2 LIMIT 1`,
+        [cleanRepoId, cleanCommitSha]
+      );
+
+      if (res.rows.length === 0) return null;
+      return res.rows[0].report_data;
+    } catch (err) {
+      console.warn('[ReportDatabaseRepository] Failed to read engineering report from database:', err);
+      return null;
+    }
   }
 
   /**
