@@ -21,6 +21,7 @@ import {
   Check,
   Radio,
   Github,
+  LogOut,
 } from 'lucide-react';
 import { useSession } from '@/lib/auth/useSession';
 
@@ -118,7 +119,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   isRefreshing = false,
 }) => {
   // Authentication session state
-  const { user, authenticated, loading: sessionLoading } = useSession();
+  const { user, authenticated, loading: sessionLoading, logout } = useSession();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Dropdown states
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -130,6 +132,19 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   // Custom repo input in switcher
   const [customRepoInput, setCustomRepoInput] = useState('');
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      const success = await logout();
+      if (success) {
+        setIsProfileOpen(false);
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Notifications state
   const [notifications, setNotifications] = useState<SystemNotification[]>(INITIAL_NOTIFICATIONS);
@@ -537,6 +552,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                     >
                       <FolderGit2 size={14} className="text-text-muted" />
                       <span>Repository Ingestion</span>
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="w-full text-left px-2.5 py-2 rounded text-body-sm text-semantic-red hover:bg-surface-alt transition-colors flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
+                      aria-label="Sign out"
+                    >
+                      <LogOut size={14} className={isLoggingOut ? 'animate-spin' : 'text-semantic-red'} />
+                      <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
                     </button>
                   </div>
 

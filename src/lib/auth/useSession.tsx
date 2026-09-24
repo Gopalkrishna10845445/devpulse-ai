@@ -3,7 +3,8 @@
 /**
  * Client-Side Authentication Session Hook & Provider
  *
- * Connects frontend UI to real backend session state from GET /api/auth/session.
+ * Connects frontend UI to real backend session state from GET /api/auth/session
+ * and handles secure session termination via POST /api/auth/logout.
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -24,6 +25,7 @@ export interface SessionState {
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
+  logout: () => Promise<boolean>;
 }
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -67,6 +69,32 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  const logout = useCallback(async (): Promise<boolean> => {
+    try {
+      setError(null);
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setUser(null);
+        setAuthenticated(false);
+        return true;
+      } else {
+        const err = new Error(`Logout failed with HTTP ${response.status}`);
+        setError(err);
+        return false;
+      }
+    } catch (err: any) {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      setError(errorObj);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     fetchSession();
   }, [fetchSession]);
@@ -79,6 +107,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         loading,
         error,
         refresh: fetchSession,
+        logout,
       }}
     >
       {children}
@@ -99,5 +128,6 @@ export function useSession(): SessionState {
     loading: false,
     error: null,
     refresh: async () => {},
+    logout: async () => false,
   };
 }
