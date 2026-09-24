@@ -94,6 +94,17 @@ const CODE_PATTERN_RULES: CodePatternRule[] = [
     impact: 'Deserializing untrusted data can lead to arbitrary code execution in the application runtime.',
     recommendation: 'Use safe loaders such as yaml.safe_load() or JSON-based serialization formats.',
   },
+  {
+    id: 'RULE_CODE_SSRF_UNVALIDATED_FETCH',
+    name: 'Potential Server-Side Request Forgery (SSRF)',
+    pattern: /(?:fetch|axios\.(?:get|post|put|delete|request))\s*\(\s*(?:req\.(?:query|params|body)\.[a-zA-Z0-9_]+|params\.[a-zA-Z0-9_]+|targetUrl|userUrl)/i,
+    languageFilter: /\.(?:ts|tsx|js|jsx)$/i,
+    severity: 'high',
+    confidence: 'medium',
+    description: 'Potential SSRF risk: server-side HTTP request initiated using unvalidated user input or parameters.',
+    impact: 'May allow attackers to coerce the server into issuing network requests to internal services, cloud metadata endpoints, or local loopback.',
+    recommendation: 'Validate and allowlist target hostnames, disallow loopback/private IP ranges (127.0.0.1, 169.254.169.254), and restrict protocols to HTTPS.',
+  },
 ];
 
 export function scanCodePatterns(repoIndex: RepositoryIndex): {

@@ -529,6 +529,37 @@ export class ReportDatabaseRepository {
   }
 
   /**
+   * Retrieves stored Security Intelligence report from PostgreSQL.
+   */
+  public static async getSecurityReport(
+    repositoryId: string,
+    commitSha?: string
+  ): Promise<any | null> {
+    const isLive = await db.isAvailable();
+    if (!isLive) return null;
+
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+
+    try {
+      let query = `SELECT findings_data FROM security_reports WHERE repository_id = $1`;
+      const params: any[] = [cleanRepoId];
+
+      if (commitSha) {
+        query += ` AND commit_sha = $2 ORDER BY created_at DESC LIMIT 1`;
+        params.push(commitSha.trim());
+      } else {
+        query += ` ORDER BY created_at DESC LIMIT 1`;
+      }
+
+      const res = await db.query(query, params);
+      if (res.rows.length === 0) return null;
+      return res.rows[0].findings_data;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Persists a Security Intelligence Report.
    */
   public static async saveSecurityReport(
@@ -539,29 +570,61 @@ export class ReportDatabaseRepository {
     const isLive = await db.isAvailable();
     if (!isLive) return;
 
-    await db.query(
-      `INSERT INTO security_reports (
-        repository_id, commit_sha, status, total_findings, high_severity,
-        medium_severity, low_severity, findings_data
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
-      ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
-        status = $3,
-        total_findings = $4,
-        high_severity = $5,
-        medium_severity = $6,
-        low_severity = $7,
-        findings_data = $8::jsonb`,
-      [
-        repositoryId,
-        commitSha,
-        report.status || 'secure',
-        report.totalFindings || 0,
-        report.highCount || 0,
-        report.mediumCount || 0,
-        report.lowCount || 0,
-        JSON.stringify(report.findings || []),
-      ]
-    );
+    try {
+      const cleanRepoId = repositoryId.toLowerCase().trim();
+      const cleanCommitSha = (commitSha || 'main').trim();
+
+      await db.transaction(async (client) => {
+        // 1. Ensure repository record exists
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name)
+           VALUES ($1, $1, $2, $3)
+           ON CONFLICT (id) DO NOTHING`,
+          [cleanRepoId, cleanRepoId.split('/')[0] || cleanRepoId, cleanRepoId.split('/')[1] || cleanRepoId]
+        );
+
+        // 2. Ensure commit record exists
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, indexed_at, chunks_count)
+           VALUES ($1, $2, NOW(), 0)
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [cleanRepoId, cleanCommitSha]
+        );
+
+        // 3. Upsert security report
+        const status = report.summary?.overallStatus || report.status || 'secure';
+        const totalFindings = report.summary?.totalFindingsCount ?? report.totalFindings ?? (report.findings ? report.findings.length : 0);
+        const highSeverity = report.summary?.findingsBySeverity?.high ?? report.highCount ?? 0;
+        const mediumSeverity = report.summary?.findingsBySeverity?.medium ?? report.mediumCount ?? 0;
+        const lowSeverity = report.summary?.findingsBySeverity?.low ?? report.lowCount ?? 0;
+
+        await client.query(
+          `INSERT INTO security_reports (
+            repository_id, commit_sha, status, total_findings, high_severity,
+            medium_severity, low_severity, findings_data
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+          ON CONFLICT (repository_id, commit_sha) DO UPDATE SET
+            status = $3,
+            total_findings = $4,
+            high_severity = $5,
+            medium_severity = $6,
+            low_severity = $7,
+            findings_data = $8::jsonb`,
+          [
+            cleanRepoId,
+            cleanCommitSha,
+            status,
+            totalFindings,
+            highSeverity,
+            mediumSeverity,
+            lowSeverity,
+            JSON.stringify(report),
+          ]
+        );
+      });
+    } catch (err) {
+      console.warn('[ReportDatabaseRepository] Failed to save security report in PostgreSQL:', err);
+    }
   }
 }
 
