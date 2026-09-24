@@ -18,24 +18,34 @@ export async function POST(req: Request) {
     const user = await requireAuth(req);
 
     const body = await req.json().catch(() => ({}));
-    const { repositoryId, commitSha, userMessage, context, requestedMode, permissions, conversationId } = body;
+    const rawRepo = body.repositoryId || body.repository;
+    const rawMessage = body.userMessage || body.request;
+    const rawCommit = body.commitSha || body.branch || body.commit;
+    const { context = {}, requestedMode, permissions, conversationId } = body;
 
-    if (!repositoryId || typeof repositoryId !== 'string') {
+    if (body.prNumber && !context.activePRNumber) {
+      context.activePRNumber = typeof body.prNumber === 'number' ? body.prNumber : parseInt(body.prNumber, 10);
+    }
+
+    if (!rawRepo || typeof rawRepo !== 'string') {
       return NextResponse.json(
         { error: 'Missing or invalid "repositoryId" parameter.' },
         { status: 400 }
       );
     }
 
-    if (!userMessage || typeof userMessage !== 'string') {
+    if (!rawMessage || typeof rawMessage !== 'string') {
       return NextResponse.json(
         { error: 'Missing or invalid "userMessage" parameter.' },
         { status: 400 }
       );
     }
 
+    const repositoryId = rawRepo.trim();
+    const userMessage = rawMessage.trim();
+
     // Repository Authorization Check
-    const authRes = await authorizeRepositoryAccess(user, repositoryId.trim(), 'analyze');
+    const authRes = await authorizeRepositoryAccess(user, repositoryId, 'analyze');
     if (!authRes.authorized) {
       return NextResponse.json(
         { error: authRes.reason || 'Access denied to repository.' },
@@ -44,9 +54,9 @@ export async function POST(req: Request) {
     }
 
     const agentRequest: AgentRequest = {
-      repositoryId: repositoryId.trim(),
-      commitSha: commitSha ? commitSha.trim() : undefined,
-      userMessage: userMessage.trim(),
+      repositoryId,
+      commitSha: rawCommit ? String(rawCommit).trim() : undefined,
+      userMessage,
       context,
       requestedMode,
       permissions,

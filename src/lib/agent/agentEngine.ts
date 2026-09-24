@@ -25,9 +25,11 @@ import {
   ToolResult,
 } from './types';
 import { Citation } from '../rag/types';
+import { AgentDatabaseRepository } from '../db/repositories';
 
 export class DevPilotAgentEngine {
   private static traces: Map<string, AgentTrace> = new Map();
+  private static activeRuns: Set<string> = new Set();
 
   /**
    * Executes an autonomous developer agent workflow within bounded safety limits.
@@ -288,6 +290,7 @@ export class DevPilotAgentEngine {
     };
 
     this.traces.set(traceId, trace);
+    await AgentDatabaseRepository.saveRun(trace);
 
     // 7. Record Session Memory
     AgentSessionMemory.addTurn(request.repositoryId, conversationId, {
@@ -436,10 +439,38 @@ export class DevPilotAgentEngine {
   }
 
   /**
-   * Retrieves an execution trace by ID.
+   * Retrieves an execution trace by ID from memory or database.
    */
   public static getTrace(traceId: string): AgentTrace | undefined {
     return this.traces.get(traceId);
+  }
+
+  /**
+   * Retrieves full run details from memory or database.
+   */
+  public static async getRun(traceId: string): Promise<any | null> {
+    const memTrace = this.traces.get(traceId);
+    if (memTrace) return memTrace;
+    return await AgentDatabaseRepository.getRun(traceId);
+  }
+
+  /**
+   * Cancels an agent run and prevents any pending write actions.
+   */
+  public static async cancelRun(traceId: string): Promise<boolean> {
+    const trace = this.traces.get(traceId);
+    if (trace) {
+      trace.finalStatus = 'cancelled';
+      trace.endTime = new Date().toISOString();
+      trace.stateTransitions.push({ state: 'cancelled', timestamp: new Date().toISOString() });
+      if (trace.approvals) {
+        for (const app of trace.approvals) {
+          app.status = 'rejected';
+        }
+      }
+    }
+    const dbUpdated = await AgentDatabaseRepository.updateStatus(traceId, 'cancelled');
+    return !!trace || dbUpdated;
   }
 
   // ==========================================
@@ -454,6 +485,24 @@ export class DevPilotAgentEngine {
     activityTimeline: AgentActivityStep[];
     reason: string;
   }): AgentResponse {
+    const blockedTrace: AgentTrace = {
+      traceId: params.traceId,
+      conversationId: params.conversationId,
+      repositoryId: params.request.repositoryId,
+      commitSha: params.commitSha,
+      userMessage: params.request.userMessage,
+      classifiedMode: 'INVESTIGATE',
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      stateTransitions: [{ state: 'blocked', timestamp: new Date().toISOString() }],
+      plan: [],
+      toolInvocations: [],
+      decisions: ['Blocked due to security policy / prompt injection'],
+      approvals: [],
+      finalStatus: 'blocked',
+    };
+    this.traces.set(params.traceId, blockedTrace);
+    AgentDatabaseRepository.saveRun(blockedTrace).catch(() => {});
     return {
       traceId: params.traceId,
       conversationId: params.conversationId,

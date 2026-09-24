@@ -54,12 +54,29 @@ export class AgentToolRegistry {
     this.repoCache.set(repoFullName, context);
   }
 
+  private static aliases: Map<string, string> = new Map([
+    ['repository_search', 'symbol_lookup'],
+    ['repository_ask', 'rag_query'],
+    ['codebase_analyze', 'architecture_analysis'],
+    ['engineering_analyze', 'engineering_analysis'],
+    ['security_analyze', 'security_analysis'],
+    ['pull_request_get', 'pr_review'],
+    ['pull_request_review', 'pr_review'],
+    ['fix_propose', 'generate_fix'],
+    ['fix_apply', 'apply_fix'],
+    ['repository_status', 'repository_info'],
+  ]);
+
   public static registerTool(tool: ToolDefinition): void {
     this.tools.set(tool.name, tool);
   }
 
   public static getTool(name: string): ToolDefinition | undefined {
-    return this.tools.get(name);
+    const direct = this.tools.get(name);
+    if (direct) return direct;
+    const mapped = this.aliases.get(name);
+    if (mapped) return this.tools.get(mapped);
+    return undefined;
   }
 
   public static getAllTools(): ToolDefinition[] {

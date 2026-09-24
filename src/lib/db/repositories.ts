@@ -912,4 +912,157 @@ export class PRDatabaseRepository {
   }
 }
 
+// ─── 7. Autonomous Agent Runs Store ──────────────────────────────────────────
+
+const inMemoryAgentRuns: Map<string, any> = new Map();
+
+export class AgentDatabaseRepository {
+  /**
+   * Saves or updates an agent run trace.
+   */
+  public static async saveRun(trace: any): Promise<void> {
+    const traceId = trace.traceId || trace.id;
+    const cleanRepoId = (trace.repositoryId || '').toLowerCase().trim();
+    const cleanSha = (trace.commitSha || 'main').trim();
+    const intent = trace.classifiedMode || trace.intent || 'INVESTIGATE';
+    const status = trace.finalStatus || trace.status || 'completed';
+    const stepsCount = (trace.toolInvocations || []).length;
+    const planSummary = Array.isArray(trace.plan) ? trace.plan.join('\n') : (trace.planSummary || '');
+    const toolExecutions = trace.toolInvocations || [];
+
+    const record = {
+      id: traceId,
+      traceId,
+      repository_id: cleanRepoId,
+      repositoryId: cleanRepoId,
+      commit_sha: cleanSha,
+      commitSha: cleanSha,
+      intent,
+      status,
+      finalStatus: status,
+      steps_count: stepsCount,
+      plan_summary: planSummary,
+      plan: Array.isArray(trace.plan) ? trace.plan : [],
+      tool_executions: toolExecutions,
+      toolInvocations: toolExecutions,
+      trace_data: trace,
+      created_at: new Date().toISOString(),
+    };
+
+    inMemoryAgentRuns.set(traceId, record);
+
+    const isLive = await db.isAvailable();
+    if (!isLive) return;
+
+    try {
+      await db.query(
+        `INSERT INTO agent_runs (
+          id, repository_id, commit_sha, intent, status, steps_count, plan_summary, tool_executions, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          status = $5,
+          steps_count = $6,
+          plan_summary = $7,
+          tool_executions = $8::jsonb`,
+        [traceId, cleanRepoId, cleanSha, intent, status, stepsCount, planSummary, JSON.stringify(toolExecutions)]
+      );
+    } catch (err) {
+      Logger.warn('[AgentDatabaseRepository] Failed to persist agent run in PostgreSQL', { traceId }, err);
+    }
+  }
+
+  /**
+   * Retrieves an agent run by ID.
+   */
+  public static async getRun(traceId: string): Promise<any | null> {
+    const inMem = inMemoryAgentRuns.get(traceId);
+    const isLive = await db.isAvailable();
+    if (!isLive) return inMem || null;
+
+    try {
+      const res = await db.query(
+        `SELECT id, repository_id, commit_sha, intent, status, steps_count, plan_summary, tool_executions, created_at
+         FROM agent_runs WHERE id = $1 LIMIT 1`,
+        [traceId]
+      );
+      if (res.rows.length === 0) return inMem || null;
+      const row = res.rows[0];
+      return {
+        ...inMem,
+        id: row.id,
+        traceId: row.id,
+        repositoryId: row.repository_id,
+        commitSha: row.commit_sha,
+        intent: row.intent,
+        status: row.status,
+        finalStatus: row.status,
+        stepsCount: row.steps_count,
+        planSummary: row.plan_summary,
+        toolInvocations: row.tool_executions || [],
+        createdAt: row.created_at,
+      };
+    } catch {
+      return inMem || null;
+    }
+  }
+
+  /**
+   * Updates status of an agent run (e.g. for cancellation or completion).
+   */
+  public static async updateStatus(traceId: string, status: string): Promise<boolean> {
+    const inMem = inMemoryAgentRuns.get(traceId);
+    if (inMem) {
+      inMem.status = status;
+      inMem.finalStatus = status;
+    }
+
+    const isLive = await db.isAvailable();
+    if (!isLive) return !!inMem;
+
+    try {
+      const res = await db.query(
+        `UPDATE agent_runs SET status = $1 WHERE id = $2`,
+        [status, traceId]
+      );
+      return (res.rowCount || 0) > 0 || !!inMem;
+    } catch {
+      return !!inMem;
+    }
+  }
+
+  /**
+   * Lists runs for a repository.
+   */
+  public static async listRuns(repositoryId: string, limit = 20): Promise<any[]> {
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+    const isLive = await db.isAvailable();
+    if (!isLive) {
+      return Array.from(inMemoryAgentRuns.values())
+        .filter((r) => r.repository_id === cleanRepoId || r.repositoryId === cleanRepoId)
+        .slice(0, limit);
+    }
+
+    try {
+      const res = await db.query(
+        `SELECT id, repository_id, commit_sha, intent, status, steps_count, plan_summary, tool_executions, created_at
+         FROM agent_runs WHERE repository_id = $1 ORDER BY created_at DESC LIMIT $2`,
+        [cleanRepoId, limit]
+      );
+      return res.rows;
+    } catch {
+      return Array.from(inMemoryAgentRuns.values())
+        .filter((r) => r.repository_id === cleanRepoId || r.repositoryId === cleanRepoId)
+        .slice(0, limit);
+    }
+  }
+
+  /**
+   * Clears in-memory test cache.
+   */
+  public static clearCache(): void {
+    inMemoryAgentRuns.clear();
+  }
+}
+
+
 

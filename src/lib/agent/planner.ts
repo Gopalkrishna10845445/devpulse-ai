@@ -77,7 +77,7 @@ export class AgentPlanner {
     }
 
     // 5. Explain / Architecture keywords
-    if (/\bexplain\b|\barchitecture\b|\bhow does .* work\b|\bwalkthrough\b|\bwhere is\b|\bdesign pattern\b/i.test(msg)) {
+    if (/\bexplain\b|\barchitecture\b|\bhow does .* work\b|\bwalkthrough\b|\bwhere is\b|\bwhat handles\b|\bhow is .* handled\b|\bdesign pattern\b/i.test(msg)) {
       return {
         mode: 'EXPLAIN',
         rationale: 'User requested architectural explanation or conceptual codebase walkthrough.',
