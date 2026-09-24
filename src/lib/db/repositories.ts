@@ -762,3 +762,154 @@ export class RepositoryDatabaseRepository {
   }
 }
 
+// ─── 6. Pull Request Review Store ─────────────────────────────────────────────
+
+const inMemoryPRReviews = new Map<string, any>();
+
+export class PRDatabaseRepository {
+  /**
+   * Persists a Pull Request Review in PostgreSQL.
+   */
+  public static async saveReview(review: any): Promise<void> {
+    const cleanRepoId = (review.repositoryId || '').toLowerCase().trim();
+    const prNum = review.pullRequest?.number || review.prNumber;
+    const baseSha = (review.baseCommit || review.pullRequest?.baseSha || 'main').trim();
+    const headSha = (review.headCommit || review.pullRequest?.headSha || 'head').trim();
+
+    const key = `${cleanRepoId}:${prNum}:${headSha}`;
+    inMemoryPRReviews.set(key, review);
+
+    const isLive = await db.isAvailable();
+    if (!isLive) return;
+
+    try {
+      await db.transaction(async (client) => {
+        // 1. Ensure repository record exists
+        await client.query(
+          `INSERT INTO repositories (id, full_name, owner, name)
+           VALUES ($1, $1, $2, $3)
+           ON CONFLICT (id) DO NOTHING`,
+          [cleanRepoId, cleanRepoId.split('/')[0] || cleanRepoId, cleanRepoId.split('/')[1] || cleanRepoId]
+        );
+
+        // 2. Ensure commit record exists
+        await client.query(
+          `INSERT INTO repository_commits (repository_id, commit_sha, indexed_at, chunks_count)
+           VALUES ($1, $2, NOW(), 0)
+           ON CONFLICT (repository_id, commit_sha) DO NOTHING`,
+          [cleanRepoId, headSha]
+        );
+
+        // 3. Upsert PR review
+        const score = review.summary?.verdict === 'approve' ? 100 : review.summary?.verdict === 'comment' ? 80 : 50;
+        const blastRadiusData = {
+          changedFilesCount: review.changedFiles?.length || 0,
+          changedSymbolsCount: review.changedSymbols?.length || 0,
+          architectureImpact: review.architectureImpact,
+          securityImpact: review.securityImpact,
+          testingImpact: review.testingImpact,
+          dependencyImpact: review.dependencyImpact,
+          documentationImpact: review.documentationImpact,
+        };
+
+        await client.query(
+          `INSERT INTO pull_request_reviews (
+            repository_id, pr_number, base_sha, head_sha, score,
+            blast_radius_data, findings_data, summary, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, NOW())
+          ON CONFLICT (repository_id, pr_number, head_sha) DO UPDATE SET
+            score = $5,
+            blast_radius_data = $6::jsonb,
+            findings_data = $7::jsonb,
+            summary = $8,
+            created_at = NOW()`,
+          [
+            cleanRepoId,
+            prNum,
+            baseSha,
+            headSha,
+            score,
+            JSON.stringify(blastRadiusData),
+            JSON.stringify(review),
+            review.summary?.executiveSummary || '',
+          ]
+        );
+      });
+    } catch (err) {
+      Logger.warn('[PRDatabaseRepository] Failed to persist PR review in PostgreSQL', { repo: cleanRepoId, pr: prNum }, err);
+    }
+  }
+
+  /**
+   * Retrieves the latest review for a PR.
+   */
+  public static async getLatestReview(repositoryId: string, prNumber: number): Promise<any | null> {
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+
+    const isLive = await db.isAvailable();
+    if (!isLive) {
+      for (const [key, rev] of inMemoryPRReviews.entries()) {
+        if (key.startsWith(`${cleanRepoId}:${prNumber}:`)) {
+          return rev;
+        }
+      }
+      return null;
+    }
+
+    try {
+      const res = await db.query(
+        `SELECT findings_data FROM pull_request_reviews
+         WHERE repository_id = $1 AND pr_number = $2
+         ORDER BY created_at DESC LIMIT 1`,
+        [cleanRepoId, prNumber]
+      );
+      if (res.rows.length === 0) {
+        for (const [key, rev] of inMemoryPRReviews.entries()) {
+          if (key.startsWith(`${cleanRepoId}:${prNumber}:`)) {
+            return rev;
+          }
+        }
+        return null;
+      }
+      return res.rows[0].findings_data;
+    } catch {
+      for (const [key, rev] of inMemoryPRReviews.entries()) {
+        if (key.startsWith(`${cleanRepoId}:${prNumber}:`)) {
+          return rev;
+        }
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Retrieves review for specific commit SHA.
+   */
+  public static async getReviewBySha(repositoryId: string, prNumber: number, headSha: string): Promise<any | null> {
+    const cleanRepoId = repositoryId.toLowerCase().trim();
+    const cleanSha = headSha.trim();
+    const key = `${cleanRepoId}:${prNumber}:${cleanSha}`;
+
+    const isLive = await db.isAvailable();
+    if (!isLive) {
+      return inMemoryPRReviews.get(key) || null;
+    }
+
+    try {
+      const res = await db.query(
+        `SELECT findings_data FROM pull_request_reviews
+         WHERE repository_id = $1 AND pr_number = $2 AND head_sha = $3
+         LIMIT 1`,
+        [cleanRepoId, prNumber, cleanSha]
+      );
+      if (res.rows.length === 0) {
+        return inMemoryPRReviews.get(key) || null;
+      }
+      return res.rows[0].findings_data;
+    } catch {
+      return inMemoryPRReviews.get(key) || null;
+    }
+  }
+}
+
+

@@ -276,6 +276,54 @@ export function analyzeSecurityImpact(
             recommendation: 'Sanitize HTML with DOMPurify or use standard JSX text binding.',
           });
         }
+
+        // 5. Unsafe SQL Query Interpolation
+        if (/(?:SELECT|INSERT|UPDATE|DELETE)\s+.*\$\{[^}]+\}/i.test(line.content) || /query\s*\(\s*`[^`]*\$\{[^}]+\}/i.test(line.content)) {
+          findings.push({
+            id: `PR-SEC-SQL-${file.filePath}-${line.newLineNumber || 1}`,
+            category: 'security',
+            severity: 'high',
+            confidence: 'high',
+            title: 'Unsafe SQL String Interpolation',
+            description: `PR constructs SQL query using unescaped string interpolation (${line.content.trim()}).`,
+            impact: 'Enables SQL Injection if interpolated variables contain user-controlled input.',
+            file: file.filePath,
+            line: line.newLineNumber,
+            evidence: {
+              summary: 'SQL query string interpolation detected',
+              filePath: file.filePath,
+              line: line.newLineNumber,
+              snippet: line.content,
+            },
+            source: 'security_intelligence',
+            rule: 'RULE_PR_DANGEROUS_CODE_PATTERN',
+            recommendation: 'Use parameterized bind variables ($1, $2) instead of direct string template interpolation.',
+          });
+        }
+
+        // 6. Insecure Cookie Configuration
+        if (/httpOnly\s*:\s*false/i.test(line.content) || (line.content.includes('cookies.set') && line.content.includes('httpOnly: false'))) {
+          findings.push({
+            id: `PR-SEC-COOKIE-${file.filePath}-${line.newLineNumber || 1}`,
+            category: 'security',
+            severity: 'medium',
+            confidence: 'high',
+            title: 'Insecure Cookie Configuration (httpOnly: false)',
+            description: `PR configures cookie with httpOnly explicitly disabled (${line.content.trim()}).`,
+            impact: 'Allows client-side JavaScript access to cookies, exposing session tokens to XSS theft.',
+            file: file.filePath,
+            line: line.newLineNumber,
+            evidence: {
+              summary: 'httpOnly: false cookie flag detected',
+              filePath: file.filePath,
+              line: line.newLineNumber,
+              snippet: line.content,
+            },
+            source: 'security_intelligence',
+            rule: 'RULE_PR_DANGEROUS_CODE_PATTERN',
+            recommendation: 'Set httpOnly: true and secure: true on authentication session cookies.',
+          });
+        }
       }
     }
   }

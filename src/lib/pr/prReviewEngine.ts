@@ -150,7 +150,9 @@ export class PRReviewEngine {
     const keyFindings = findings.map(f => f.title).slice(0, 5);
 
     const executiveSummary =
-      verdict === 'request_changes'
+      findings.length === 0
+        ? 'Review completed. No actionable findings detected. All deterministic security and architecture checks passed.'
+        : verdict === 'request_changes'
         ? `Review requires changes: ${criticalCount} critical and ${highCount} high severity issue(s) identified in PR diff.`
         : verdict === 'comment'
         ? `Review generated ${findings.length} advisory finding(s). Recommend addressing findings prior to merge.`
@@ -194,7 +196,7 @@ export class PRReviewEngine {
 
     const durationMs = Date.now() - startTime;
 
-    return {
+    const review: PullRequestReview = {
       id: `PR-REV-${repoFullName.replace('/', '-')}-${prMetadata.number}-${prMetadata.headSha.slice(0, 7)}`,
       repositoryId: repoFullName,
       pullRequest: prMetadata,
@@ -222,5 +224,15 @@ export class PRReviewEngine {
         aiSynthesisUsed: false,
       },
     };
+
+    // 10. Persist Review to Database (Idempotent & Fallback Safe)
+    try {
+      const { PRDatabaseRepository } = await import('../db/repositories');
+      await PRDatabaseRepository.saveReview(review);
+    } catch {
+      // Non-fatal if database is unconfigured or in memory fallback
+    }
+
+    return review;
   }
 }
