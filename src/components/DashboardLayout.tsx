@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar, NavSection } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CommandPalette } from './CommandPalette';
+import { SessionProvider } from '@/lib/auth/useSession';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -41,41 +42,43 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   }, [handleGlobalKeyDown]);
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary flex flex-col font-sans">
-      {/* Sidebar */}
-      <Sidebar
-        activeSection={activeSection}
-        onSelectSection={onSelectSection}
-        currentRepo={currentRepo}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
-      />
+    <SessionProvider>
+      <div className="min-h-screen bg-bg text-text-primary flex flex-col font-sans">
+        {/* Sidebar */}
+        <Sidebar
+          activeSection={activeSection}
+          onSelectSection={onSelectSection}
+          currentRepo={currentRepo}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+        />
 
-      {/* Top Bar */}
-      <TopBar
-        activeSection={activeSection}
-        currentRepo={currentRepo}
-        onSelectRepo={onSelectRepo}
-        onNavigateSection={onSelectSection}
-        onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        onOpenSearch={() => setIsCommandOpen(true)}
-        onRefresh={onRefresh}
-        isRefreshing={isRefreshing}
-      />
+        {/* Top Bar */}
+        <TopBar
+          activeSection={activeSection}
+          currentRepo={currentRepo}
+          onSelectRepo={onSelectRepo}
+          onNavigateSection={onSelectSection}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          onOpenSearch={() => setIsCommandOpen(true)}
+          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+        />
 
-      {/* Main Content Workspace */}
-      <main className="flex-1 lg:pl-sidebar-w pt-topbar-h pb-12 min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {children}
-        </div>
-      </main>
+        {/* Main Content Workspace */}
+        <main className="flex-1 lg:pl-sidebar-w pt-topbar-h pb-12 min-h-screen">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
+        </main>
 
-      {/* Command Palette */}
-      <CommandPalette
-        isOpen={isCommandOpen}
-        onClose={() => setIsCommandOpen(false)}
-        onNavigate={(section) => onSelectSection(section as NavSection)}
-      />
-    </div>
+        {/* Command Palette */}
+        <CommandPalette
+          isOpen={isCommandOpen}
+          onClose={() => setIsCommandOpen(false)}
+          onNavigate={(section) => onSelectSection(section as NavSection)}
+        />
+      </div>
+    </SessionProvider>
   );
 };

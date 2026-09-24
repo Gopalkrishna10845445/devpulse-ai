@@ -13,7 +13,9 @@ import {
   Settings,
   ChevronRight,
   GitBranch,
+  Github,
 } from 'lucide-react';
+import { useSession } from '@/lib/auth/useSession';
 
 export type NavSection =
   | 'overview'
@@ -68,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
+  const { user, authenticated, loading } = useSession();
   const resolvedSection = resolveSection(activeSection);
 
   const content = (
@@ -155,27 +158,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Identity Area */}
-        <div className="flex items-center justify-between pt-1 px-1">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-full overflow-hidden border border-border flex-shrink-0 bg-surface-alt">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
-                alt="Gopal"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-caption font-medium text-text-primary truncate leading-tight">
-                Gopal
-              </span>
-              <span className="text-[10px] text-text-muted truncate leading-tight">
-                Developer
-              </span>
+        {loading ? (
+          <div className="flex items-center gap-2.5 pt-1 px-1">
+            <div className="w-7 h-7 rounded-full bg-surface-alt animate-pulse" />
+            <div className="space-y-1 flex-1">
+              <div className="h-3 w-16 bg-surface-alt animate-pulse rounded" />
+              <div className="h-2 w-12 bg-surface-alt animate-pulse rounded" />
             </div>
           </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-semantic-green flex-shrink-0" title="Connected" />
-        </div>
+        ) : !authenticated || !user ? (
+          <div className="pt-1">
+            <a
+              href="/api/auth/github"
+              className="flex items-center justify-center gap-2 w-full px-2.5 py-1.5 rounded-md bg-surface border border-border hover:border-border-strong hover:bg-surface-alt text-caption font-medium text-text-primary transition-colors cursor-pointer"
+            >
+              <Github size={13} className="text-text-primary" />
+              <span>Sign in with GitHub</span>
+            </a>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between pt-1 px-1">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-full overflow-hidden border border-border flex-shrink-0 bg-surface-alt flex items-center justify-center">
+                {user.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName || user.githubLogin || 'User'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[11px] font-mono font-bold text-text-primary">
+                    {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-caption font-medium text-text-primary truncate leading-tight">
+                  {user.displayName || user.githubLogin || 'GitHub User'}
+                </span>
+                <span className="text-[10px] text-text-muted font-mono truncate leading-tight">
+                  @{user.githubLogin}
+                </span>
+              </div>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-semantic-green flex-shrink-0" title="Connected" />
+          </div>
+        )}
       </div>
     </div>
   );

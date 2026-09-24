@@ -20,7 +20,9 @@ import {
   Lock,
   Check,
   Radio,
+  Github,
 } from 'lucide-react';
+import { useSession } from '@/lib/auth/useSession';
 
 interface TopBarProps {
   activeSection: NavSection;
@@ -115,6 +117,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   onRefresh = () => {},
   isRefreshing = false,
 }) => {
+  // Authentication session state
+  const { user, authenticated, loading: sessionLoading } = useSession();
+
   // Dropdown states
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -415,120 +420,142 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* 5. Profile / User Avatar & Menu */}
         <div className="relative" ref={profileRef}>
-          <button
-            onClick={() => {
-              setIsProfileOpen((prev) => !prev);
-              setIsNotificationsOpen(false);
-              setIsRepoSwitcherOpen(false);
-            }}
-            className="flex items-center gap-2 p-0.5 rounded-full border border-border hover:border-border-strong transition-colors focus:outline-none focus:ring-2 focus:ring-text-muted"
-            aria-label="User profile menu"
-            aria-haspopup="true"
-            aria-expanded={isProfileOpen}
-          >
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-surface-alt flex items-center justify-center">
-              {!avatarError ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
-                  alt="Gopal Krishna"
-                  onError={() => setAvatarError(true)}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-caption font-mono font-bold text-text-primary">G</span>
-              )}
+          {sessionLoading ? (
+            <div className="w-8 h-8 rounded-full bg-surface-alt animate-pulse flex items-center justify-center border border-border">
+              <span className="w-2.5 h-2.5 rounded-full bg-text-muted/40" />
             </div>
-          </button>
-
-          {/* Profile Dropdown Overlay */}
-          {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-md bg-surface border border-border shadow-lg z-50 p-4 space-y-3">
-              {/* User Identity Header */}
-              <div className="flex items-center gap-3 pb-3 border-b border-border">
-                <div className="w-10 h-10 rounded-full bg-surface-alt border border-border flex items-center justify-center flex-shrink-0">
-                  {!avatarError ? (
+          ) : !authenticated || !user ? (
+            <a
+              href="/api/auth/github"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-alt border border-border hover:border-border-strong text-caption font-medium text-text-primary transition-colors cursor-pointer"
+              title="Sign in with GitHub"
+            >
+              <Github size={14} className="text-text-primary flex-shrink-0" />
+              <span className="hidden sm:inline">Sign in with GitHub</span>
+              <span className="sm:hidden">Sign In</span>
+            </a>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  setIsProfileOpen((prev) => !prev);
+                  setIsNotificationsOpen(false);
+                  setIsRepoSwitcherOpen(false);
+                }}
+                className="flex items-center gap-2 p-0.5 rounded-full border border-border hover:border-border-strong transition-colors focus:outline-none focus:ring-2 focus:ring-text-muted"
+                aria-label="User profile menu"
+                aria-haspopup="true"
+                aria-expanded={isProfileOpen}
+              >
+                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-surface-alt flex items-center justify-center">
+                  {!avatarError && user.avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-8NTCo-S2KSqMfteAY68iR3Z9mHkZkauLfx0l3WZSwDU7M6gh7r3pnoubnM2EeMd5Md4wuCJUJmOLB29Z3F3riQViMVu1icIaRVQo5jeShOMpG-Ustw7e1pQDlnVeLiI71q2DkbaSr4aCLZ1jn1LmTv0DpG0jGuiN5Dg6IvvNfdYkRtTgFLR7yejY8zBpD21y3oUhtk4uGCV6gdd24f4yh1fol4NvTldu2knwvQxpK0St7-yONKW8gg"
-                      alt="Gopal Krishna"
+                      src={user.avatarUrl}
+                      alt={user.displayName || user.githubLogin || 'User'}
                       onError={() => setAvatarError(true)}
-                      className="w-full h-full rounded-full object-cover"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-body-sm font-mono font-bold text-text-primary">G</span>
+                    <span className="text-caption font-mono font-bold text-text-primary">
+                      {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                    </span>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-body-sm font-semibold text-text-primary truncate">
-                    Gopal Krishna
+              </button>
+
+              {/* Profile Dropdown Overlay */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-72 rounded-md bg-surface border border-border shadow-lg z-50 p-4 space-y-3">
+                  {/* User Identity Header */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    <div className="w-10 h-10 rounded-full bg-surface-alt border border-border flex items-center justify-center flex-shrink-0">
+                      {!avatarError && user.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.displayName || user.githubLogin || 'User'}
+                          onError={() => setAvatarError(true)}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-body-sm font-mono font-bold text-text-primary">
+                          {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-body-sm font-semibold text-text-primary truncate">
+                        {user.displayName || user.githubLogin || 'GitHub User'}
+                      </div>
+                      <div className="text-caption font-mono text-text-muted truncate">
+                        @{user.githubLogin}
+                      </div>
+                      <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.2 rounded bg-surface-alt text-[10px] font-mono text-text-secondary border border-border">
+                        <span>{user.role === 'ADMIN' ? 'Admin' : (user.role || 'Member')}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-caption font-mono text-text-muted truncate">
-                    @Gopalkrishna10845445
+
+                  {/* Status Chips */}
+                  <div className="space-y-1.5 bg-surface-alt p-2.5 rounded border border-border text-[11px] font-mono text-text-secondary">
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Environment:</span>
+                      <span className="text-text-primary font-medium">Staging</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Client Secrets:</span>
+                      <span className="text-semantic-green font-medium">0 Exposed</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">GitHub Mode:</span>
+                      <span className="text-text-primary font-medium">OAuth 2.0 Connected</span>
+                    </div>
                   </div>
-                  <div className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.2 rounded bg-surface-alt text-[10px] font-mono text-text-secondary border border-border">
-                    <span>Staff Engineer</span>
+
+                  {/* Navigation Actions */}
+                  <div className="space-y-1 pt-1">
+                    <button
+                      onClick={() => handleNavigate('settings')}
+                      className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                    >
+                      <Settings size={14} className="text-text-muted" />
+                      <span>Settings &amp; Configuration</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavigate('agent')}
+                      className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                    >
+                      <Bot size={14} className="text-text-muted" />
+                      <span>DevPilot Agent Workspace</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavigate('ingestion')}
+                      className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
+                    >
+                      <FolderGit2 size={14} className="text-text-muted" />
+                      <span>Repository Ingestion</span>
+                    </button>
+                  </div>
+
+                  {/* Session / Authentication Footer */}
+                  <div className="pt-2 border-t border-border flex items-center justify-between text-caption text-text-muted">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-semantic-green" />
+                      <span className="text-[11px] font-mono">Server Session Active</span>
+                    </div>
+                    <button
+                      onClick={() => handleNavigate('settings')}
+                      className="text-[11px] text-text-muted hover:text-text-primary hover:underline"
+                    >
+                      Configure Keys
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Status Chips */}
-              <div className="space-y-1.5 bg-surface-alt p-2.5 rounded border border-border text-[11px] font-mono text-text-secondary">
-                <div className="flex items-center justify-between">
-                  <span className="text-text-muted">Environment:</span>
-                  <span className="text-text-primary font-medium">Local Dev Instance</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-text-muted">Client Secrets:</span>
-                  <span className="text-semantic-green font-medium">0 Exposed</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-text-muted">GitHub Mode:</span>
-                  <span className="text-text-primary font-medium">Server-Side Auth</span>
-                </div>
-              </div>
-
-              {/* Navigation Actions */}
-              <div className="space-y-1 pt-1">
-                <button
-                  onClick={() => handleNavigate('settings')}
-                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
-                >
-                  <Settings size={14} className="text-text-muted" />
-                  <span>Settings &amp; Configuration</span>
-                </button>
-
-                <button
-                  onClick={() => handleNavigate('agent')}
-                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
-                >
-                  <Bot size={14} className="text-text-muted" />
-                  <span>DevPilot Agent Workspace</span>
-                </button>
-
-                <button
-                  onClick={() => handleNavigate('ingestion')}
-                  className="w-full text-left px-2.5 py-2 rounded text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-alt transition-colors flex items-center gap-2.5"
-                >
-                  <FolderGit2 size={14} className="text-text-muted" />
-                  <span>Repository Ingestion</span>
-                </button>
-              </div>
-
-              {/* Session / Authentication Footer */}
-              <div className="pt-2 border-t border-border flex items-center justify-between text-caption text-text-muted">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-semantic-green" />
-                  <span className="text-[11px] font-mono">Server Session Active</span>
-                </div>
-                <button
-                  onClick={() => handleNavigate('settings')}
-                  className="text-[11px] text-text-muted hover:text-text-primary hover:underline"
-                >
-                  Configure Keys
-                </button>
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
