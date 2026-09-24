@@ -565,7 +565,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     />
                   ) : (
                     <span className="text-caption font-mono font-bold text-text-primary">
-                      {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                      {((user.displayName || user.githubLogin || 'U').trim()[0] || 'U').toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -587,7 +587,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         />
                       ) : (
                         <span className="text-body-sm font-mono font-bold text-text-primary">
-                          {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                          {((user.displayName || user.githubLogin || 'U').trim()[0] || 'U').toUpperCase()}
                         </span>
                       )}
                     </div>

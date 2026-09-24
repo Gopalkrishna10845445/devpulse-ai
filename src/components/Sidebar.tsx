@@ -189,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 ) : (
                   <span className="text-[11px] font-mono font-bold text-text-primary">
-                    {(user.displayName || user.githubLogin || 'U')[0].toUpperCase()}
+                    {((user.displayName || user.githubLogin || 'U').trim()[0] || 'U').toUpperCase()}
                   </span>
                 )}
               </div>

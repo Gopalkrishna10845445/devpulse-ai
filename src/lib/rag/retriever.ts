@@ -219,6 +219,15 @@ export class CodebaseRetriever {
         }
       }
 
+      if (intent.type === 'auth_flow' && chunk.filePath.toLowerCase().includes('auth')) {
+        score += 0.4;
+        isPathMatch = true;
+      }
+      if (intent.type === 'data_access' && (chunk.filePath.includes('db') || chunk.filePath.includes('prisma') || chunk.filePath.includes('schema') || chunk.filePath.includes('model'))) {
+        score += 0.4;
+        isPathMatch = true;
+      }
+
       // 3. Keyword token overlap
       const contentLower = chunk.content.toLowerCase();
       let matchedKw = 0;

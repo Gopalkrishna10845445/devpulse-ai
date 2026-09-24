@@ -298,7 +298,7 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
           <Code2 size={32} className="mx-auto text-text-muted" />
           <h3 className="text-heading-sm text-text-primary">Ready to Analyze Codebase</h3>
           <p className="text-body-sm text-text-muted max-w-md mx-auto">
-            Click "Re-Analyze Codebase" above to inspect the repository structure, detect frameworks, extract symbols, and model its architecture.
+            Click &quot;Re-Analyze Codebase&quot; above to inspect the repository structure, detect frameworks, extract symbols, and model its architecture.
           </p>
         </div>
       )}

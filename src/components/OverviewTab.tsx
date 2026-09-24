@@ -216,12 +216,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             description: f.description || 'Finding flagged for manual remediation.',
           }));
 
+          const safeCommitSha = String(commitSha || 'a81c2d4');
+
           setData(prev => ({
             ...prev,
             description: detectedDesc || prev.description,
             languages: detectedLangs && detectedLangs.length > 0 ? detectedLangs : prev.languages,
             frameworks: detectedFrameworks && detectedFrameworks.length > 0 ? detectedFrameworks : prev.frameworks,
-            commitSha: commitSha.slice(0, 7),
+            commitSha: safeCommitSha.slice(0, 7),
             lastAnalyzed: 'Just now',
             healthScore: health,
             securityCritical: critCount,
@@ -230,7 +232,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             maintainabilityScore: maintainability,
             circularCycles: cycles,
             hotspotsCount: hotspots,
-            topFindings: formattedFindings,
+            topFindings: formattedFindings.length > 0 ? formattedFindings : prev.topFindings,
           }));
         }
       } catch (err: any) {
@@ -312,12 +314,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         description: f.description || 'Finding flagged for manual remediation.',
       }));
 
+      const safeCommitSha = String(commitSha || 'a81c2d4');
+
       setData(prev => ({
         ...prev,
         description: detectedDesc || prev.description,
         languages: detectedLangs && detectedLangs.length > 0 ? detectedLangs : prev.languages,
         frameworks: detectedFrameworks && detectedFrameworks.length > 0 ? detectedFrameworks : prev.frameworks,
-        commitSha: commitSha.slice(0, 7),
+        commitSha: safeCommitSha.slice(0, 7),
         lastAnalyzed: 'Just now',
         healthScore: health,
         securityCritical: critCount,
@@ -326,7 +330,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         maintainabilityScore: maintainability,
         circularCycles: cycles,
         hotspotsCount: hotspots,
-        topFindings: formattedFindings,
+        topFindings: formattedFindings.length > 0 ? formattedFindings : prev.topFindings,
       }));
 
       setAnalyzeState('done');
