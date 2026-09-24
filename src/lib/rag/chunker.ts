@@ -6,6 +6,7 @@
  */
 
 import { FileIntelligence } from '../intelligence/types';
+import { isBinaryPath, isExcludedDirectory, isSensitivePath } from '../repository/fileFilter';
 import { CodeChunk } from './types';
 
 // Deterministic chunk ID generator
@@ -29,6 +30,7 @@ export function chunkSourceFile(
   fileIntelligence?: FileIntelligence
 ): CodeChunk[] {
   if (!content || !content.trim()) return [];
+  if (isSensitivePath(filePath) || isExcludedDirectory(filePath) || isBinaryPath(filePath)) return [];
 
   const lines = content.split('\n');
   const totalLines = lines.length;

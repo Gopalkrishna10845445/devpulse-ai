@@ -139,7 +139,20 @@ export class CodebaseRAGPipeline {
     const commitSha = request.commitSha || (repositoryIndex as any)?.commitSha || repositoryIndex?.repository?.defaultBranch || this.vectorStore.findIndexedCommit(repositoryId) || 'main';
 
     // 1. Check if repository is indexed
-    const indexStatus = this.vectorStore.getIndexStatus(repositoryId, commitSha);
+    let indexStatus = this.vectorStore.getIndexStatus(repositoryId, commitSha);
+    if (!indexStatus.isIndexed || indexStatus.chunksIndexed === 0) {
+      try {
+        const indexed = await this.indexRepository(
+          repositoryId,
+          repositoryIndex,
+          codebaseIntelligence
+        );
+        indexStatus = indexed.status;
+      } catch (err: any) {
+        // Fall back if on-demand indexing fails
+      }
+    }
+
     if (!indexStatus.isIndexed || indexStatus.chunksIndexed === 0) {
       return {
         answer: `Repository ${repositoryId} is not yet indexed for commit ${commitSha.slice(0, 7)}. Please index the repository first.`,

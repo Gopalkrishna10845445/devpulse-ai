@@ -103,7 +103,8 @@ export async function authorizeRepositoryAccess(
   const repoOwner = cleanRepoId.split('/')[0] || '';
 
   // 1. Owner of personal repository automatically gets OWNER role
-  if (repoOwner.toLowerCase() === user.githubLogin.toLowerCase()) {
+  const userLogin = (user.githubLogin || '').toLowerCase();
+  if (userLogin && repoOwner.toLowerCase() === userLogin) {
     return { authorized: true, role: 'OWNER' };
   }
 
