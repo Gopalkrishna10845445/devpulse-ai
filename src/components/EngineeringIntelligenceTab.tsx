@@ -33,6 +33,7 @@ import {
 import { StatusBadge } from './StatusBadge';
 import { CodeFixProposal } from '@/lib/fixes/types';
 import { CodeFixProposalModal } from './CodeFixProposalModal';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface EngineeringIntelligenceTabProps {
   initialRepoFullName?: string;
@@ -184,10 +185,10 @@ export const EngineeringIntelligenceTab: React.FC<EngineeringIntelligenceTabProp
       if (res.ok && data.success) {
         setReport(data.report);
       } else {
-        setErrorMsg(data.error || 'Failed to generate engineering health report.');
+        setErrorMsg(normalizeErrorMessage(data?.error, 'Failed to generate engineering health report.'));
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Network error while analyzing engineering health.');
+      setErrorMsg(normalizeErrorMessage(err?.message, 'Network error while analyzing engineering health.'));
     } finally {
       setIsAnalyzing(false);
     }

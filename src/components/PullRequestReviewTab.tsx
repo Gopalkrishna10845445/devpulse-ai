@@ -20,6 +20,7 @@ import {
   SecurityImpact,
   TestingImpact,
 } from '@/lib/pr/types';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 import {
   AlertCircle,
   AlertTriangle,
@@ -106,10 +107,10 @@ export const PullRequestReviewTab: React.FC<PullRequestReviewTabProps> = ({
           setSelectedFileForDiff(data.review.changedFiles[0].filePath);
         }
       } else {
-        setErrorMsg(data.error || 'Failed to review Pull Request.');
+        setErrorMsg(normalizeErrorMessage(data?.error, 'Failed to review Pull Request.'));
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Network error while requesting PR review.');
+      setErrorMsg(normalizeErrorMessage(err?.message, 'Network error while requesting PR review.'));
     } finally {
       setIsReviewing(false);
     }

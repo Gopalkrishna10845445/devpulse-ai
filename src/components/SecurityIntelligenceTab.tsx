@@ -33,6 +33,7 @@ import {
 import { StatusBadge } from './StatusBadge';
 import { CodeFixProposalModal } from './CodeFixProposalModal';
 import { maskSecret } from '@/lib/security/redactor';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface SecurityIntelligenceTabProps {
   initialRepoFullName?: string;
@@ -178,10 +179,10 @@ export const SecurityIntelligenceTab: React.FC<SecurityIntelligenceTabProps> = (
       if (res.ok && data.success) {
         setReport(data.report);
       } else {
-        setErrorMsg(data.error || 'Failed to generate security health report.');
+        setErrorMsg(normalizeErrorMessage(data?.error, 'Failed to generate security health report.'));
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Network error while analyzing repository security.');
+      setErrorMsg(normalizeErrorMessage(err?.message, 'Network error while analyzing repository security.'));
     } finally {
       setIsScanning(false);
     }

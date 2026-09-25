@@ -18,6 +18,7 @@ import {
   AgentResponse,
   ResponseTrustLevel,
 } from '@/lib/agent/types';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 import {
   AlertCircle,
   AlertTriangle,
@@ -137,10 +138,10 @@ export const AgentTab: React.FC<AgentTabProps> = ({
       if (res.ok) {
         setAgentResponse(data);
       } else {
-        setErrorMessage(data.error || data.details || 'Agent execution failed.');
+        setErrorMessage(normalizeErrorMessage(data?.error || data?.details, 'Agent execution failed.'));
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Network error during agent execution.');
+      setErrorMessage(normalizeErrorMessage(err?.message, 'Network error during agent execution.'));
     } finally {
       setIsRunning(false);
     }
