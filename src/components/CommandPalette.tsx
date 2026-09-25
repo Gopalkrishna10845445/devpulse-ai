@@ -138,6 +138,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       setSelectedIndex((i) => Math.max(i - 1, 0));
     }
     if (e.key === 'Enter' && filtered[selectedIndex]) {
+      e.preventDefault();
       filtered[selectedIndex].action();
     }
   }, [filtered, selectedIndex, onClose]);

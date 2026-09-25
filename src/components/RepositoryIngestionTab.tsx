@@ -7,6 +7,7 @@ import {
 } from '@/lib/repository/types';
 import { FolderOpen, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface RepositoryIngestionTabProps {
   initialRepoFullName?: string;
@@ -41,13 +42,17 @@ export const RepositoryIngestionTab: React.FC<RepositoryIngestionTabProps> = ({
 
     try {
       setIngestionStep('Retrieving repository tree & files...');
+      const trimmedRepo = repoInput.trim();
+      const isHttp = trimmedRepo.startsWith('http://') || trimmedRepo.startsWith('https://');
+      const hasSlash = trimmedRepo.includes('/');
+
       const res = await fetch('/api/repository/ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: repoInput.includes('/') ? repoInput : undefined,
-          url: repoInput.startsWith('http') ? repoInput : undefined,
-          owner: !repoInput.includes('/') && !repoInput.startsWith('http') ? repoInput : undefined,
+          fullName: hasSlash && !isHttp ? trimmedRepo : undefined,
+          url: isHttp ? trimmedRepo : undefined,
+          owner: !hasSlash && !isHttp ? trimmedRepo : undefined,
           branch: branchInput.trim() || undefined,
         }),
       });
@@ -58,11 +63,11 @@ export const RepositoryIngestionTab: React.FC<RepositoryIngestionTabProps> = ({
         setIndex(data.index);
         setIngestionStep('completed');
       } else {
-        setErrorMsg(data.error?.message || 'Repository ingestion failed.');
+        setErrorMsg(normalizeErrorMessage(data?.error, 'Repository ingestion failed.'));
         setIngestionStep('failed');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Network error during ingestion.');
+      setErrorMsg(normalizeErrorMessage(err?.message, 'Network error during ingestion.'));
       setIngestionStep('failed');
     } finally {
       setIsIngesting(false);

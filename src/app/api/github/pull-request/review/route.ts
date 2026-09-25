@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth(req);
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { repositoryId, pullRequestNumber, baseSha, headSha, preloadedIndex, preloadedIntelligence } = body;
 
     if (!repositoryId || typeof repositoryId !== 'string') {

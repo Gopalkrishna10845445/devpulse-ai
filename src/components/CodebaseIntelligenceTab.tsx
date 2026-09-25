@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Info
 } from 'lucide-react';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface CodebaseIntelligenceTabProps {
   initialRepoFullName?: string;
@@ -101,13 +102,17 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
 
     try {
       setAnalysisStep('Parsing language-aware symbols & resolving imports...');
+      const trimmedRepo = targetRepo.trim();
+      const isHttp = trimmedRepo.startsWith('http://') || trimmedRepo.startsWith('https://');
+      const hasSlash = trimmedRepo.includes('/');
+
       const res = await fetch('/api/codebase/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: targetRepo.includes('/') ? targetRepo : undefined,
-          url: targetRepo.startsWith('http') ? targetRepo : undefined,
-          owner: !targetRepo.includes('/') && !targetRepo.startsWith('http') ? targetRepo : undefined,
+          fullName: hasSlash && !isHttp ? trimmedRepo : undefined,
+          url: isHttp ? trimmedRepo : undefined,
+          owner: !hasSlash && !isHttp ? trimmedRepo : undefined,
           index: preloadedIndex || undefined,
           forceRefresh,
         }),
@@ -120,12 +125,12 @@ export const CodebaseIntelligenceTab: React.FC<CodebaseIntelligenceTabProps> = (
         setIntelligence(data.intelligence);
         setAnalysisStep('completed');
       } else {
-        setErrorMsg(data.error?.message || 'Codebase intelligence analysis failed.');
+        setErrorMsg(normalizeErrorMessage(data?.error, 'Codebase intelligence analysis failed.'));
         setAnalysisStep('failed');
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        setErrorMsg(err.message || 'Network error during codebase analysis.');
+        setErrorMsg(normalizeErrorMessage(err?.message, 'Network error during codebase analysis.'));
         setAnalysisStep('failed');
       }
     } finally {

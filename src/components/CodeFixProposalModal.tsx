@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { DiffViewer } from './DiffViewer';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface CodeFixProposalModalProps {
   proposal: CodeFixProposal | null;
@@ -49,7 +50,7 @@ export const CodeFixProposalModal: React.FC<CodeFixProposalModalProps> = ({
     try {
       await onApprove(proposal.id);
     } catch (err: any) {
-      setActionError(err.message || 'Failed to approve proposal.');
+      setActionError(normalizeErrorMessage(err?.message, 'Failed to approve proposal.'));
     } finally {
       setIsProcessing(false);
     }
@@ -60,10 +61,10 @@ export const CodeFixProposalModal: React.FC<CodeFixProposalModalProps> = ({
     setIsProcessing(true);
     setActionError(null);
     try {
-      await onReject(proposal.id, rejectionReason || undefined);
+      await onReject(proposal.id, rejectionReason.trim() || undefined);
       setShowRejectInput(false);
     } catch (err: any) {
-      setActionError(err.message || 'Failed to reject proposal.');
+      setActionError(normalizeErrorMessage(err?.message, 'Failed to reject proposal.'));
     } finally {
       setIsProcessing(false);
     }
@@ -76,7 +77,7 @@ export const CodeFixProposalModal: React.FC<CodeFixProposalModalProps> = ({
     try {
       await onApply(proposal.id);
     } catch (err: any) {
-      setActionError(err.message || 'Failed to apply proposal.');
+      setActionError(normalizeErrorMessage(err?.message, 'Failed to apply proposal.'));
     } finally {
       setIsProcessing(false);
     }

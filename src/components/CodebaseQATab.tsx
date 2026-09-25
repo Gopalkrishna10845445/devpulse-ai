@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Send, User, Bot, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { normalizeErrorMessage } from '@/lib/errorUtils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -89,7 +90,8 @@ export const CodebaseQATab: React.FC<CodebaseQATabProps> = ({
           }),
         });
         if (!res.ok) {
-          throw new Error('Failed to ask question');
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(normalizeErrorMessage(errData?.error, 'Failed to ask question'));
         }
         result = await res.json();
       }
@@ -101,10 +103,10 @@ export const CodebaseQATab: React.FC<CodebaseQATabProps> = ({
         retrievedChunks: result?.retrievedChunks || [],
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
+    } catch (err: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'An error occurred while processing your question. Please ensure repository is indexed.' },
+        { role: 'assistant', content: normalizeErrorMessage(err?.message, 'An error occurred while processing your question. Please ensure repository is indexed.') },
       ]);
     } finally {
       setIsLoading(false);
@@ -200,9 +202,9 @@ export const CodebaseQATab: React.FC<CodebaseQATabProps> = ({
                 )}
 
                 {/* Confidence */}
-                {msg.confidence !== undefined && (
+                {msg.confidence !== undefined && msg.confidence !== null && (
                   <p className="mt-1.5 text-[10px] font-mono text-text-muted">
-                    Confidence: {typeof msg.confidence === 'number' ? `${(msg.confidence * 100).toFixed(0)}%` : msg.confidence.replace('_', ' ').toUpperCase()}
+                    Confidence: {typeof msg.confidence === 'number' ? `${(msg.confidence * 100).toFixed(0)}%` : typeof msg.confidence === 'string' ? msg.confidence.replace(/_/g, ' ').toUpperCase() : String(msg.confidence)}
                   </p>
                 )}
 
